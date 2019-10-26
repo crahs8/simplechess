@@ -17,15 +17,15 @@ public class Board {
      * Constructs a Board object.
      */
     Board() {
-        position = new char[][] {
-                {'r','n','b','q','k','b','n','r'},
-                {'p','p','p','p','p','p','p','p'},
-                {' ',' ',' ',' ',' ',' ',' ',' '},
-                {' ',' ',' ',' ',' ',' ',' ',' '},
-                {' ',' ',' ',' ',' ',' ',' ',' '},
-                {' ',' ',' ',' ',' ',' ',' ',' '},
-                {'P','P','P','P','P','P','P','P'},
-                {'R','N','B','Q','K','B','N','R'}
+        position = new char[][]{
+                {'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'},
+                {'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'},
+                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                {'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'},
+                {'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'}
         };
         toMove = WHITE;
         moveGen = new MoveGenerator(this);
@@ -38,6 +38,7 @@ public class Board {
 
     /**
      * Applies a move to the board.
+     *
      * @param m The move to apply.
      */
     public void makeMove(Move m) {
@@ -59,8 +60,9 @@ public class Board {
 
     /**
      * Returns whether a given square has a given piece.
-     * @param r The row of the square.
-     * @param c The column of the square.
+     *
+     * @param r     The row of the square.
+     * @param c     The column of the square.
      * @param piece The piece to check for.
      * @return whether the piece is on the square.
      */
@@ -70,14 +72,15 @@ public class Board {
 
     /**
      * Returns a string representation of the board state. Used for testing purposes.
+     *
      * @return string representation of the board.
      */
     public String toString() {
         String boardString = "";
-        for(int i = 0; i < 8; i++) {
+        for (int i = 0; i < 8; i++) {
             boardString += "   --- --- --- --- --- --- --- --- \n";
             boardString += (8 - i) + " | ";
-            for(int j = 0; j < 8; j++) {
+            for (int j = 0; j < 8; j++) {
                 boardString += position[i][j] + " | ";
             }
             boardString += "\n";

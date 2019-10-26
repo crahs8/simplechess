@@ -11,6 +11,7 @@ public class Move {
 
     /**
      * Constructs a Move from a starting square to an ending square.
+     *
      * @param r1 The row of the starting square.
      * @param c1 The column of the starting square.
      * @param r2 row of the ending square.
@@ -26,12 +27,13 @@ public class Move {
 
     /**
      * Converts a column index (0 to 7) to chess file (a - h)
+     *
      * @param c The column to convert.
      * @return the chess file of the corresponding to the column.
      */
     private static char columnToChar(int c) {
-        if(c < 0 || c > 7) throw new IllegalArgumentException(c + " is not a valid column.");
-        return (char)(97 + c);
+        if (c < 0 || c > 7) throw new IllegalArgumentException(c + " is not a valid column.");
+        return (char) (97 + c);
     }
 
     public int getR1() {
@@ -51,7 +53,7 @@ public class Move {
     }
 
     public char getDestinationValue() {
-        if(destinationValue == '?') throw new IllegalStateException("Move wasn't made yet.");
+        if (destinationValue == '?') throw new IllegalStateException("Move wasn't made yet.");
         return destinationValue;
     }
 
@@ -61,6 +63,7 @@ public class Move {
 
     /**
      * Creates a string representation of the move. EG. "e2 to e4".
+     *
      * @return the string representation of the move.
      */
     public String toString() {

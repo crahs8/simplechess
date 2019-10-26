@@ -1,8 +1,15 @@
 import java.util.*;
 
+/**
+ * Generates legal moves in the board position.
+ */
 public class MoveGenerator {
     private Board board;
 
+    /**
+     * Constructs a MoveGenerator for the given board.
+     * @param board The board to generate moves for.
+     */
     public MoveGenerator(Board board) {
         this.board = board;
     }
@@ -39,6 +46,10 @@ public class MoveGenerator {
         board.unmakeMove();
     }
 
+    /**
+     * Generates and adds all pawn moves to a list of moves.
+     * @param moves The list of moves to add to.
+     */
     private void generatePawnMoves(List<Move> moves) {
         char pawn; int secondRow;
         if(board.getToMove() == Board.WHITE) {

@@ -1,14 +1,21 @@
 import java.util.Stack;
 
+/**
+ * Represents a chess board.
+ */
 public class Board {
     public static final int WHITE = 1;
     public static final int BLACK = -1;
 
+    // The position of the pieces on the board.
     private char[][] position;
     private int toMove;
     private MoveGenerator moveGen;
     private Stack<Move> moveHistory;
 
+    /**
+     * Constructs a Board object.
+     */
     Board() {
         position = new char[][] {
                 {'r','n','b','q','k','b','n','r'},

@@ -21,13 +21,7 @@ public class MoveGenerator {
      * @param color The color of the king.
      * @return whether the king is check.
      */
-    private boolean isCheck(int color) {
-        if (color == Board.WHITE) {
-            char pawn = 'P', knight = 'N', bishop = 'B', rook = 'R', queen = 'Q', king = 'K';
-        } else {
-            char pawn = 'p', knight = 'n', bishop = 'b', rook = 'r', queen = 'q', king = 'k';
-        }
-
+    private boolean isCheck(Color color) {
         return false;
     }
 
@@ -49,33 +43,25 @@ public class MoveGenerator {
     }
 
     /**
-     * Generates and adds all pawn moves to a list of moves.
+     * Generates and adds all pawn moves from a given square to a list of moves.
      *
+     * @param r The row of the square.
+     * @param c The column of the square.
      * @param moves The list of moves to add to.
      */
-    private void generatePawnMoves(List<Move> moves) {
-        char pawn;
-        int secondRow;
-        if (board.getToMove() == Board.WHITE) {
-            pawn = 'P';
-            secondRow = 6;
-        } else pawn = 'p';
-        secondRow = 1;
-
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                if (board.squareHasPiece(i, j, pawn)) {
-                    // 1 forward
-                    if (board.squareHasPiece(i - board.getToMove(), j, ' '))
-                        addMove(i, j, i - 2 * board.getToMove(), j, moves);
-                    // 2 forward
-                    if (i == secondRow && board.squareHasPiece(i - board.getToMove(), j, ' ')
-                            && board.squareHasPiece(i - 2 * board.getToMove(), j, ' '))
-                        addMove(i, j, i - 2 * board.getToMove(), j, moves);
-                    //if()
-                }
-            }
-        }
+    private void generatePawnMoves(int r, int c, List<Move> moves) {
+        int secondRow = board.getToMove() == Color.WHITE ? 6 : 1;
+        int row1 = r + (board.getToMove() == Color.WHITE ? -1 : 1);
+        int row2 = c + (board.getToMove() == Color.WHITE ? -2 : 2);
+        // 1 forward
+        if (board.squareHasPiece(row1, c, Piece.EMPTY))
+            addMove(r, c, row1, c, moves);
+        // 2 forward
+        if (r == secondRow && board.squareHasPiece(row1, c, Piece.EMPTY)
+                && board.squareHasPiece(row2, c, Piece.EMPTY))
+            addMove(r, c, row2, c, moves);
+        // Diagonal left
+        //if()
     }
 
     /**
@@ -86,7 +72,15 @@ public class MoveGenerator {
     public List<Move> generateMoves() {
         List<Move> moves = new ArrayList<>();
 
-        generatePawnMoves(moves);
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                switch (board.getPiece(i, j).getType()) {
+                    case PAWN:
+                        generatePawnMoves(i, j, moves);
+                        break;
+                }
+            }
+        }
 
         return moves;
     }

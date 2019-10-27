@@ -4,20 +4,17 @@ import java.util.Stack;
  * Represents a chess board.
  */
 public class Board {
-    public static final int WHITE = 1;
-    public static final int BLACK = -1;
-
     // The position of the pieces on the board.
-    private char[][] position;
-    private int toMove;
-    private MoveGenerator moveGen;
-    private Stack<Move> moveHistory;
+    private final Piece[][] position;
+    private final MoveGenerator moveGen;
+    private final Stack<Move> moveHistory;
+    private Color toMove;
 
     /**
      * Constructs a Board object.
      */
     Board() {
-        position = new char[][]{
+        char[][] setup = new char[][]{
                 {'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'},
                 {'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'},
                 {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
@@ -27,12 +24,23 @@ public class Board {
                 {'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'},
                 {'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'}
         };
-        toMove = WHITE;
+        position = parseSetup(setup);
         moveGen = new MoveGenerator(this);
         moveHistory = new Stack<>();
+        toMove = Color.WHITE;
     }
 
-    public int getToMove() {
+    private Piece[][] parseSetup(char[][] setup) {
+        Piece[][] pieces = new Piece[8][8];
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                pieces[i][j] = new Piece(setup[i][j]);
+            }
+        }
+        return pieces;
+    }
+
+    public Color getToMove() {
         return toMove;
     }
 
@@ -42,11 +50,11 @@ public class Board {
      * @param m The move to apply.
      */
     public void makeMove(Move m) {
-        m.setDestinationValue(position[m.getR2()][m.getC2()]);
+        m.setDestinationPiece(position[m.getR2()][m.getC2()]);
         position[m.getR2()][m.getC2()] = position[m.getR1()][m.getC1()];
-        position[m.getR1()][m.getC1()] = ' ';
+        position[m.getR1()][m.getC1()] = Piece.EMPTY;
         moveHistory.push(m);
-        toMove = -toMove;   // flips to the other player
+        toMove = toMove.swap();   // flips to the other player
     }
 
     /**
@@ -55,19 +63,30 @@ public class Board {
     public void unmakeMove() {
         Move m = moveHistory.pop();
         position[m.getR1()][m.getC1()] = position[m.getR2()][m.getC2()];
-        position[m.getR2()][m.getC2()] = m.getDestinationValue();
+        position[m.getR2()][m.getC2()] = m.getDestinationPiece();
     }
 
     /**
      * Returns whether a given square has a given piece.
      *
-     * @param r     The row of the square.
-     * @param c     The column of the square.
-     * @param piece The piece to check for.
+     * @param r The row of the square.
+     * @param c The column of the square.
+     * @param p The piece to check for.
      * @return whether the piece is on the square.
      */
-    public boolean squareHasPiece(int r, int c, char piece) {
-        return position[r][c] == piece;
+    public boolean squareHasPiece(int r, int c, Piece p) {
+        return position[r][c] == p;
+    }
+
+    /**
+     * Returns the piece at a given square.
+     *
+     * @param r The row of the square.
+     * @param c The column of the square.
+     * @return the piece at the given square.
+     */
+    public Piece getPiece(int r, int c) {
+        return position[r][c];
     }
 
     /**

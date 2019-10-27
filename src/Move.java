@@ -2,12 +2,12 @@
  * Represents a chess move.
  */
 public class Move {
-    private int r1;
-    private int c1;
-    private int r2;
-    private int c2;
+    private final int r1;
+    private final int c1;
+    private final int r2;
+    private final int c2;
     // The char at the move's destination. Used to undo the move.
-    private char destinationValue;
+    private Piece destinationPiece;
 
     /**
      * Constructs a Move from a starting square to an ending square.
@@ -22,7 +22,7 @@ public class Move {
         this.c1 = c1;
         this.r2 = r2;
         this.c2 = c2;
-        destinationValue = '?';
+        destinationPiece = null;
     }
 
     /**
@@ -52,13 +52,13 @@ public class Move {
         return c2;
     }
 
-    public char getDestinationValue() {
-        if (destinationValue == '?') throw new IllegalStateException("Move wasn't made yet.");
-        return destinationValue;
+    public Piece getDestinationPiece() {
+        if (destinationPiece == null) throw new IllegalStateException("Move wasn't made yet.");
+        return destinationPiece;
     }
 
-    public void setDestinationValue(char destinationValue) {
-        this.destinationValue = destinationValue;
+    public void setDestinationPiece(Piece destinationValue) {
+        this.destinationPiece = destinationValue;
     }
 
     /**

@@ -34,7 +34,7 @@ public class Board {
         Piece[][] pieces = new Piece[8][8];
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                pieces[i][j] = new Piece(setup[i][j]);
+                pieces[i][j] = Piece.fromChar(setup[i][j]);
             }
         }
         return pieces;
@@ -67,6 +67,17 @@ public class Board {
     }
 
     /**
+     * Returns the piece at a given square.
+     *
+     * @param r The row of the square.
+     * @param c The column of the square.
+     * @return the piece at the given square.
+     */
+    public Piece getPiece(int r, int c) {
+        return position[r][c];
+    }
+
+    /**
      * Returns whether a given square has a given piece.
      *
      * @param r The row of the square.
@@ -79,14 +90,14 @@ public class Board {
     }
 
     /**
-     * Returns the piece at a given square.
+     * Returns whether a given square is empty or the opposite color of the player to move.
      *
      * @param r The row of the square.
      * @param c The column of the square.
-     * @return the piece at the given square.
+     * @return whether the square is capturable.
      */
-    public Piece getPiece(int r, int c) {
-        return position[r][c];
+    public boolean squareIsCapturable(int r, int c) {
+        return position[r][c].getColor() != toMove;
     }
 
     /**

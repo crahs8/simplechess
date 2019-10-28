@@ -4,17 +4,17 @@ public class Piece {
     private final Type type;
     private final Color color;
 
+    public static Piece fromChar(char p) {
+        if (p == ' ') {
+            return EMPTY;
+        } else return new Piece(p);
+    }
+
     private Piece(Type type, Color color) {
         this.type = type;
         this.color = color;
     }
-
-    public Piece(char p) {
-        if (p == ' ') {
-            this.type = Type.EMPTY;
-            this.color = null;
-            return;
-        }
+    private Piece(char p) {
         if (Character.isLowerCase(p)) {
             this.color = Color.BLACK;
             p = Character.toUpperCase(p);

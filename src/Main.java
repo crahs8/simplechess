@@ -7,8 +7,10 @@ public class Main {
         System.out.println("Making move " + testMove);
         board.makeMove(testMove);
         System.out.println(board);
+        System.out.println("Legal Moves: " + board.getLegalMoves());
         System.out.println("Unmaking last move");
         board.unmakeMove();
         System.out.println(board);
+        System.out.println("Legal Moves: " + board.getLegalMoves());
     }
 }

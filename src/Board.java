@@ -1,4 +1,4 @@
-import java.util.Stack;
+import java.util.*;
 
 /**
  * Represents a chess board.
@@ -40,6 +40,15 @@ public class Board {
         return pieces;
     }
 
+    /**
+     * Get all legal moves in the position.
+     *
+     * @return all legal moves in the position.
+     */
+    public List<Move> getLegalMoves() {
+        return moveGen.generateMoves();
+    }
+
     public Color getToMove() {
         return toMove;
     }
@@ -64,6 +73,7 @@ public class Board {
         Move m = moveHistory.pop();
         position[m.getR1()][m.getC1()] = position[m.getR2()][m.getC2()];
         position[m.getR2()][m.getC2()] = m.getDestinationPiece();
+        toMove = toMove.swap();   // flips to the other player
     }
 
     /**

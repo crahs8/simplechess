@@ -30,6 +30,12 @@ public class Board {
         toMove = Color.WHITE;
     }
 
+    /**
+     * Converts a 2d array of chars to a 2d array of Piece-objects.
+     *
+     * @param setup The 2d char array.
+     * @return A 2d array of Piece objects.
+     */
     private Piece[][] parseSetup(char[][] setup) {
         Piece[][] pieces = new Piece[8][8];
         for (int i = 0; i < 8; i++) {

@@ -106,14 +106,15 @@ public class Board {
     }
 
     /**
-     * Returns whether a given square is empty or the opposite color of the player to move.
+     * Returns whether a given square is empty or the opponent of a given color.
      *
-     * @param r The row of the square.
-     * @param c The column of the square.
-     * @return whether the square is capturable.
+     * @param r     The row of the square.
+     * @param c     The column of the square.
+     * @param color The color that captures.
+     * @return whether the square is capturable for the color.
      */
-    public boolean squareIsCapturable(int r, int c) {
-        return position[r][c].getColor() != toMove;
+    public boolean squareCapturableBy(int r, int c, Color color) {
+        return position[r][c].getColor() != color;
     }
 
     /**
@@ -121,6 +122,7 @@ public class Board {
      *
      * @return string representation of the board.
      */
+    @Override
     public String toString() {
         String boardString = "";
         for (int i = 0; i < 8; i++) {

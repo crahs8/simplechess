@@ -29,7 +29,7 @@ public class Move {
      * Converts a column index (0 to 7) to chess file (a - h)
      *
      * @param c The column to convert.
-     * @return the chess file of the corresponding to the column.
+     * @return the chess file corresponding to the column.
      */
     private static char columnToChar(int c) {
         if (c < 0 || c > 7) throw new IllegalArgumentException(c + " is not a valid column.");
@@ -66,6 +66,7 @@ public class Move {
      *
      * @return the string representation of the move.
      */
+    @Override
     public String toString() {
         return columnToChar(c1) + "" + (8 - r1) + " to " + columnToChar(c2) + "" + (8 - r2);
     }

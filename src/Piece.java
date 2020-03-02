@@ -10,10 +10,11 @@ public class Piece {
         } else return new Piece(p);
     }
 
-    private Piece(Type type, Color color) {
+    public Piece(Type type, Color color) {
         this.type = type;
         this.color = color;
     }
+    
     private Piece(char p) {
         if (Character.isLowerCase(p)) {
             this.color = Color.BLACK;
@@ -39,7 +40,7 @@ public class Piece {
                 this.type = Type.KING;
                 break;
             default:
-                throw new IllegalArgumentException(p + " is not a valid piece character");
+                throw new IllegalArgumentException(p + " is not a valid piece character.");
         }
     }
 
@@ -51,11 +52,13 @@ public class Piece {
         return color;
     }
 
+    @Override
     public boolean equals(Object o) {
         if(!(o instanceof Piece)) return false;
         return type == ((Piece) o).getType() && color == ((Piece) o).getColor();
     }
 
+    @Override
     public String toString() {
         return color == Color.WHITE ? type.toString() : type.toString().toLowerCase();
     }

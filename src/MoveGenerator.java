@@ -21,58 +21,67 @@ public class MoveGenerator {
      * @return all the legal moves in the position.
      */
     public List<Move> generateMoves() {
-        List<Move> moves = new ArrayList<>();
+        List<Move> moves = new LinkedList<>();
 
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                if(board.getPiece(i, j).getColor() != board.getToMove()) continue;
-                switch (board.getPiece(i, j).getType()) {
-                    case PAWN:
-                        generatePawnMoves(i, j, moves);
-                        break;
-                    case KNIGHT:
-                        generateKnightMoves(i, j, moves);
-                        break;
-                    case BISHOP:
-                        generateBishopMoves(i, j, moves);
-                        break;
-                    case ROOK:
-                        generateRookMoves(i, j, moves);
-                        break;
-                    case QUEEN:
-                        generateQueenMoves(i, j, moves);
-                        break;
-                    case KING:
-                        generateKingMoves(i, j, moves);
-                        break;
-                }
+                Piece p = board.getPiece(i, j);
+                if(p.getColor() != board.getToMove()) continue;
+                generatePieceMoves(i, j, p.getType(), board.getToMove(), moves);
             }
         }
+
+        removeIllegalMoves(moves);
 
         return moves;
     }
 
     /**
+     * Returns whether a given move places the playing player's king in check.
+     *
+     * @param m The move to check.
+     * @return whether the move places the king in check.
+     */
+    private boolean moveLegal(Move m) {
+        boolean legal;
+        board.makeMove(m);
+        legal = !isCheck(board.getToMove());
+        board.unmakeMove();
+        return legal;
+    }
+
+    /**
+     * Removes all moves that place the playing player's king in check from a given list.
+     *
+     * @param moves The list of moves to remove from.
+     */
+    private void removeIllegalMoves(List<Move> moves) {
+        moves.removeIf(move -> !moveLegal(move));
+    }
+
+    /**
      * Returns whether a given square is attacked by the opponent of a given player.
+     *
      * @param r     The row of the square to check.
      * @param c     The column of the square to check.
      * @param color The color of the attacked player.
      * @return whether a square is attacked.
      */
     private boolean squareAttacked(int r, int c, Color color) {
-        Piece pawn = new Piece(Piece.Type.PAWN, color.swap());
-        Piece knight = new Piece(Piece.Type.PAWN, color.swap());
-        Piece bishop = new Piece(Piece.Type.PAWN, color.swap());
-        Piece rook = new Piece(Piece.Type.PAWN, color.swap());
-        Piece queen = new Piece(Piece.Type.PAWN, color.swap());
+        Color opColor = color.swap();
+        Piece pawn = new Piece(Piece.Type.PAWN, opColor);
+        Piece knight = new Piece(Piece.Type.PAWN, opColor);
+        Piece bishop = new Piece(Piece.Type.PAWN, opColor);
+        Piece rook = new Piece(Piece.Type.PAWN, opColor);
+        Piece queen = new Piece(Piece.Type.PAWN, opColor);
         Piece[] pieces = {pawn, knight, bishop, rook, queen};
 
-        List<List<Move>> allAttacks = new ArrayList<>(); // Using list cause Java gets cranky with generic arrays.
-        allAttacks.add(generatePawnMoves(r, c, color));
-        allAttacks.add(generateKnightMoves(r, c, color));
-        allAttacks.add(generateBishopMoves(r, c, color));
-        allAttacks.add(generateRookMoves(r, c, color));
-        allAttacks.add(generateQueenMoves(r, c, color));
+        List<List<Move>> allAttacks = new ArrayList<>();
+        for (Piece piece : pieces) {
+            List<Move> pieceMoves = new ArrayList<>();
+            generatePieceMoves(r, c, piece.getType(), color, pieceMoves);
+            allAttacks.add(pieceMoves);
+        }
 
         for (int i = 0; i < pieces.length; i++) {
             for (Move m : allAttacks.get(i)) {
@@ -80,6 +89,7 @@ public class MoveGenerator {
                     return true;
             }
         }
+
         return false;
     }
 
@@ -97,6 +107,40 @@ public class MoveGenerator {
             }
         }
         throw new RuntimeException("Somehow didn't find a king...");
+    }
+
+    /**
+     * Generates and adds to a list with all moves of a given piece type from a given square by a given player.
+     *
+     * @param r         The row of the square.
+     * @param c         The column of the square.
+     * @param type      The type of piece to generate for.
+     * @param toPlay    The color of the player.
+     * @param moves     The list of moves to add to.
+     */
+    private void generatePieceMoves(int r, int c, Piece.Type type, Color toPlay, List<Move> moves) {
+        switch (type) {
+            case PAWN:
+                generatePawnMoves(r, c, toPlay, moves);
+                break;
+            case KNIGHT:
+                generateKnightMoves(r, c, toPlay, moves);
+                break;
+            case BISHOP:
+                generateBishopMoves(r, c, toPlay, moves);
+                break;
+            case ROOK:
+                generateRookMoves(r, c, toPlay, moves);
+                break;
+            case QUEEN:
+                generateQueenMoves(r, c, toPlay, moves);
+                break;
+            case KING:
+                generateKingMoves(r, c, toPlay, moves);
+                break;
+            default:
+                throw new IllegalArgumentException(type + " is not a valid piece type.");
+        }
     }
 
     /**
@@ -127,14 +171,14 @@ public class MoveGenerator {
     }
 
     /**
-     * Generates and returns a list with all pawn moves from a given square by a given player.
+     * Generates and adds to a list with all pawn moves from a given square by a given player.
      *
      * @param r         The row of the square.
      * @param c         The column of the square.
      * @param toPlay    The color of the player.
-     * @return a list of pawn moves from the square by the player.
+     * @param moves     The list of moves to add to.
      */
-    private List<Move> generatePawnMoves(int r, int c, Color toPlay) {
+    private void generatePawnMoves(int r, int c, Color toPlay, List<Move> moves) {
         int secondRow, forward, forward2;
         if(toPlay == Color.WHITE) {
             secondRow = 6;
@@ -145,8 +189,6 @@ public class MoveGenerator {
             forward = r + 1;
             forward2 = r + 2;
         }
-
-        List<Move> moves = new ArrayList<>();
 
         // 1 forward
         if (board.squareHasPiece(forward, c, Piece.EMPTY))
@@ -161,21 +203,17 @@ public class MoveGenerator {
         // Diagonal right
         if (c < 7 && board.getPiece(forward, c + 1).getColor() == toPlay.swap())
             moves.add(new Move(r, c, forward, c + 1));
-
-        return moves;
     }
 
     /**
-     * Generates and returns a list with all knight moves from a given square by a given player.
+     * Generates and adds to a list with all knight moves from a given square by a given player.
      *
      * @param r         The row of the square.
      * @param c         The column of the square.
      * @param toPlay    The color of the player.
-     * @return a list of pawn moves from the square by the player.
+     * @param moves     The list of moves to add to.
      */
-    private List<Move> generateKnightMoves(int r, int c, Color toPlay) {
-        List<Move> moves = new ArrayList<>();
-
+    private void generateKnightMoves(int r, int c, Color toPlay, List<Move> moves) {
         if (r < 7) {
             // down, right, right
             if (c < 6 && board.squareCapturableBy(r + 1, c + 2, toPlay))
@@ -208,21 +246,17 @@ public class MoveGenerator {
                     moves.add(new Move(r, c, r - 2, c - 1));
             }
         }
-
-        return moves;
     }
 
     /**
-     * Generates and returns a list with all bishop moves from a given square by a given player.
+     * Generates and adds to a list with all bishop moves from a given square by a given player.
      *
      * @param r         The row of the square.
      * @param c         The column of the square.
      * @param toPlay    The color of the player.
-     * @return a list of pawn moves from the square by the player.
+     * @param moves     The list of moves to add to.
      */
-    private List<Move> generateBishopMoves(int r, int c, Color toPlay) {
-        List<Move> moves = new ArrayList<>();
-        
+    private void generateBishopMoves(int r, int c, Color toPlay , List<Move> moves) {
         // down, right
         for (int i = r + 1, j = c + 1; i < 8 && j < 8; i++, j++)
             if (!sliderAddMove(r, c, i, j, moves, toPlay)) break;
@@ -235,21 +269,17 @@ public class MoveGenerator {
         // up, left
         for (int i = r - 1, j = c - 1; i >= 0 && j >= 0; i--, j--)
             if (!sliderAddMove(r, c, i, j, moves, toPlay)) break;
-
-        return moves;
     }
 
     /**
-     * Generates and returns a list with all rook moves from a given square by a given player.
+     * Generates and adds to a list with all rook moves from a given square by a given player.
      *
      * @param r         The row of the square.
      * @param c         The column of the square.
      * @param toPlay    The color of the player.
-     * @return a list of pawn moves from the square by the player.
+     * @param moves     The list of moves to add to.
      */
-    private List<Move> generateRookMoves(int r, int c, Color toPlay) {
-        List<Move> moves = new ArrayList<>();
-
+    private void generateRookMoves(int r, int c, Color toPlay, List<Move> moves) {
         // down
         for (int i = r + 1; i < 8; i++)
             if (!sliderAddMove(r, c, i, c, moves, toPlay)) break;
@@ -262,36 +292,30 @@ public class MoveGenerator {
         // left
         for (int i = c - 1; i >= 0; i--)
             if (!sliderAddMove(r, c, i, c, moves, toPlay)) break;
-
-        return moves;
     }
 
     /**
-     * Generates and returns a list with all queen moves from a given square by a given player.
+     * Generates and adds to a list with all queen moves from a given square by a given player.
      *
      * @param r         The row of the square.
      * @param c         The column of the square.
      * @param toPlay    The color of the player.
-     * @return a list of pawn moves from the square by the player.
+     * @param moves     The list of moves to add to.
      */
-    private List<Move> generateQueenMoves(int r, int c, Color toPlay) {
-        List<Move> moves = generateBishopMoves(r, c, toPlay);
-        moves.addAll(generateRookMoves(r, c, toPlay));
-
-        return moves;
+    private void generateQueenMoves(int r, int c, Color toPlay, List<Move> moves) {
+        generateBishopMoves(r, c, toPlay, moves);
+        generateRookMoves(r, c, toPlay, moves);
     }
 
     /**
-     * Generates and returns a list with all king moves from a given square by a given player.
+     * Generates and adds to a list with all king moves from a given square by a given player.
      *
      * @param r         The row of the square.
      * @param c         The column of the square.
      * @param toPlay    The color of the player.
-     * @return a list of pawn moves from the square by the player.
+     * @param moves     The list of moves to add to.
      */
-    private List<Move> generateKingMoves(int r, int c, Color toPlay) {
-        List<Move> moves = new ArrayList<>();
-
+    private void generateKingMoves(int r, int c, Color toPlay, List<Move> moves) {
         // down
         if (r < 7 && board.squareCapturableBy(r + 1, c, toPlay))
             addMove(r, c, r + 1, c, moves);
@@ -316,7 +340,5 @@ public class MoveGenerator {
         // up, left
         if (r > 0 && c > 0 && board.squareCapturableBy(r - 1, c - 1, toPlay))
             addMove(r, c, r - 1, c - 1, moves);
-
-        return moves;
     }
 }

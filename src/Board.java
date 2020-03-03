@@ -102,7 +102,7 @@ public class Board {
      * @return whether the piece is on the square.
      */
     public boolean squareHasPiece(int r, int c, Piece p) {
-        return position[r][c] == p;
+        return position[r][c].equals(p);
     }
 
     /**

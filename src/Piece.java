@@ -55,7 +55,7 @@ public class Piece {
     @Override
     public boolean equals(Object o) {
         if(!(o instanceof Piece)) return false;
-        return type == ((Piece) o).getType() && color == ((Piece) o).getColor();
+        return type == ((Piece) o).type && color == ((Piece) o).color;
     }
 
     @Override

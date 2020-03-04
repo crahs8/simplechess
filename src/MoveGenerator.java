@@ -144,30 +144,57 @@ public class MoveGenerator {
     }
 
     /**
-     * Creates and adds a Move from a given starting square to a given
-     * ending square to the given List of moves, if the move is legal.
+     * Returns whether a given square is withing the limits of the board.
      *
-     * @param r1    The row of the stating square.
-     * @param c1    The column of the starting square.
-     * @param r2    The row of the ending square.
-     * @param c2    The column of the ending square.
-     * @param moves The List of moves to add to.
+     * @param r The row of the square.
+     * @param c The column of the square.
+     * @return whether the square is on the board
      */
-    private void addMove(int r1, int c1, int r2, int c2, List<Move> moves) {
-        Move move = new Move(r1, c1, r2, c2);
-        board.makeMove(move);
-        if (!isCheck(board.getToMove())) moves.add(move);
-        board.unmakeMove();
+    private boolean squareOnBoard(int r, int c) {
+        return r >= 0 && r <= 7 && c >= 0 && c <= 7;
     }
 
-    private boolean sliderAddMove(int r1, int c1, int r2, int c2, List<Move> moves, Color toPlay) {
-        if (board.getPiece(r2, c2) == Piece.EMPTY) moves.add(new Move(r1, c1, r2, c2));
-        else if (board.getPiece(r1, r2).getColor() == toPlay) return false;
-        else {
-            moves.add(new Move(r1, c1, r2, c2));
-            return false;
+    /**
+     * Adds all non-sliding moves to a list of moves from matching arrays indicating steps along the row and column.
+     *
+     * @param r         The origin square's row.
+     * @param c         The origin square's column.
+     * @param rowSteps  The step size along the row.
+     * @param colSteps  The step size along the column.
+     * @param toPlay    The color of the player.
+     * @param moves     THe list of moves to add to.
+     */
+    private void addMoves(int r, int c, int[] rowSteps, int[] colSteps, Color toPlay, List<Move> moves) {
+        for (int i = 0; i < rowSteps.length; i++) {
+            int row = r + rowSteps[i];
+            int col = c + colSteps[i];
+            if (squareOnBoard(row, col) && board.squareCapturableBy(row, col, toPlay))
+                moves.add(new Move(r, c, row, col));
         }
-        return true;
+    }
+
+    /**
+     * Adds all sliding moves to a list of moves from matching arrays indicating directions along the row and column.
+     *
+     * @param r         The origin square's row.
+     * @param c         The origin square's column.
+     * @param rowDir    The direction along the row.
+     * @param colDir    The direction along the column.
+     * @param toPlay    The color of the player.
+     * @param moves     THe list of moves to add to.
+     */
+    private void addMovesSliders(int r, int c, int[] rowDir, int[] colDir, Color toPlay, List<Move> moves) {
+        for (int i = 0; i < rowDir.length; i++) {
+            for (int j = r + rowDir[i], k = c + colDir[i]; squareOnBoard(j, k); j += rowDir[i], k += colDir[i]) {
+                Piece destPiece = board.getPiece(j, k);
+                if (destPiece == Piece.EMPTY) moves.add(new Move(r, c, j, k));
+                else if (destPiece.getColor() == toPlay) break;
+                else {
+                    moves.add(new Move(r, c, j, k));
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -214,38 +241,10 @@ public class MoveGenerator {
      * @param moves     The list of moves to add to.
      */
     private void generateKnightMoves(int r, int c, Color toPlay, List<Move> moves) {
-        if (r < 7) {
-            // down, right, right
-            if (c < 6 && board.squareCapturableBy(r + 1, c + 2, toPlay))
-                moves.add(new Move(r, c, r + 1, c + 2));
-            // down, left, left
-            if (c > 1 && board.squareCapturableBy(r + 1, c - 2, toPlay))
-                moves.add(new Move(r, c, r + 1, c - 2));
-            if (r < 6) {
-                // down, down, right
-                if (c < 7 && board.squareCapturableBy(r + 2, c + 1, toPlay))
-                    moves.add(new Move(r, c, r + 2, c + 1));
-                // down, down, left
-                if (c > 0 && board.squareCapturableBy(r + 2, c - 1, toPlay))
-                    moves.add(new Move(r, c, r + 2, c - 1));
-            }
-        }
-        if (r > 0) {
-            // up, right, right
-            if (c < 6 && board.squareCapturableBy(r - 1, c + 2, toPlay))
-                moves.add(new Move(r, c, r - 1, c + 2));
-            //  up, left, left
-            if (c > 1 && board.squareCapturableBy(r - 1, c - 2, toPlay))
-                moves.add(new Move(r, c, r - 1, c - 2));
-            if (r > 1) {
-                // up, up, right
-                if (c < 7 && board.squareCapturableBy(r - 2, c + 1, toPlay))
-                    moves.add(new Move(r, c, r - 2, c + 1));
-                // up, up, left
-                if (c > 0 && board.squareCapturableBy(r - 2, c - 1, toPlay))
-                    moves.add(new Move(r, c, r - 2, c - 1));
-            }
-        }
+        int[] rowSteps = {1, 1, 2, 2, -1, -1, -2, -2};
+        int[] colSteps = {2, -2, 1, -1, 2, -2, 1, -1};
+
+        addMoves(r, c, rowSteps, colSteps, toPlay, moves);
     }
 
     /**
@@ -257,18 +256,10 @@ public class MoveGenerator {
      * @param moves     The list of moves to add to.
      */
     private void generateBishopMoves(int r, int c, Color toPlay , List<Move> moves) {
-        // down, right
-        for (int i = r + 1, j = c + 1; i < 8 && j < 8; i++, j++)
-            if (!sliderAddMove(r, c, i, j, moves, toPlay)) break;
-        // down, left
-        for (int i = r + 1, j = c - 1; i < 8 && j >= 0; i++, j--)
-            if (!sliderAddMove(r, c, i, j, moves, toPlay)) break;
-        // up, right
-        for (int i = r - 1, j = c + 1; i >= 0 && j < 8; i--, j++)
-            if (!sliderAddMove(r, c, i, j, moves, toPlay)) break;
-        // up, left
-        for (int i = r - 1, j = c - 1; i >= 0 && j >= 0; i--, j--)
-            if (!sliderAddMove(r, c, i, j, moves, toPlay)) break;
+        int[] rowDir = {1, 1, -1, -1};
+        int[] colDir = {1, -1, 1, -1};
+
+        addMovesSliders(r, c, rowDir, colDir, toPlay, moves);
     }
 
     /**
@@ -280,18 +271,10 @@ public class MoveGenerator {
      * @param moves     The list of moves to add to.
      */
     private void generateRookMoves(int r, int c, Color toPlay, List<Move> moves) {
-        // down
-        for (int i = r + 1; i < 8; i++)
-            if (!sliderAddMove(r, c, i, c, moves, toPlay)) break;
-        // up
-        for (int i = r - 1; i >= 0; i--)
-            if (!sliderAddMove(r, c, i, c, moves, toPlay)) break;
-        // right
-        for (int i = c + 1; i < 8; i++)
-            if (!sliderAddMove(r, c, i, c, moves, toPlay)) break;
-        // left
-        for (int i = c - 1; i >= 0; i--)
-            if (!sliderAddMove(r, c, i, c, moves, toPlay)) break;
+        int[] rowDir = {1, -1, 0, 0};
+        int[] colDir = {0, 0, 1, -1};
+
+        addMovesSliders(r, c, rowDir, colDir, toPlay, moves);
     }
 
     /**
@@ -316,29 +299,14 @@ public class MoveGenerator {
      * @param moves     The list of moves to add to.
      */
     private void generateKingMoves(int r, int c, Color toPlay, List<Move> moves) {
-        // down
-        if (r < 7 && board.squareCapturableBy(r + 1, c, toPlay))
-            addMove(r, c, r + 1, c, moves);
-        // up
-        if (r > 0 && board.squareCapturableBy(r - 1, c, toPlay))
-            addMove(r, c, r - 1, c, moves);
-        // right
-        if (c < 7 && board.squareCapturableBy(r, c + 1, toPlay))
-            addMove(r, c, r, c + 1, moves);
-        // left
-        if (c > 0 && board.squareCapturableBy(r, c - 1, toPlay))
-            addMove(r, c, r, c - 1, moves);
-        // down, right
-        if (r < 7 && c < 7 && board.squareCapturableBy(r + 1, c + 1, toPlay))
-            addMove(r, c, r + 1, c + 1, moves);
-        // down, left
-        if (r < 7 && c > 0 && board.squareCapturableBy(r + 1, c - 1, toPlay))
-            addMove(r, c, r + 1, c - 1, moves);
-        // up, right
-        if (r > 0 && c < 7 && board.squareCapturableBy(r - 1, c + 1, toPlay))
-            addMove(r, c, r - 1, c + 1, moves);
-        // up, left
-        if (r > 0 && c > 0 && board.squareCapturableBy(r - 1, c - 1, toPlay))
-            addMove(r, c, r - 1, c - 1, moves);
+        int[] rowSteps = {1, -1, 0, 0, 1, 1, -1, -1};
+        int[] colSteps = {0, 0, 1, -1, 1, -1, 1, -1};
+
+        addMoves(r, c, rowSteps, colSteps, toPlay, moves);
+
+        // kingside castle
+        /*if (toPlay == Color.WHITE) {
+            if ()
+        }*/
     }
 }

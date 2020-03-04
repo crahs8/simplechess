@@ -6,7 +6,7 @@ public class Move {
     private final int c1;
     private final int r2;
     private final int c2;
-    // The char at the move's destination. Used to undo the move.
+    // The piece at the move's destination. Used to undo the move.
     private Piece destinationPiece;
 
     /**

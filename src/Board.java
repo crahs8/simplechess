@@ -9,6 +9,10 @@ public class Board {
     private final MoveGenerator moveGen;
     private final Stack<Move> moveHistory;
     private Color toMove;
+    private Boolean wKingCastlingRights;
+    private Boolean wQueenCastlingRights;
+    private Boolean bKingCastlingRights;
+    private Boolean bQueenCastlingRights;
 
     /**
      * Constructs a Board object.
@@ -28,6 +32,10 @@ public class Board {
         moveGen = new MoveGenerator(this);
         moveHistory = new Stack<>();
         toMove = Color.WHITE;
+        wKingCastlingRights = true;
+        wQueenCastlingRights = true;
+        bKingCastlingRights = true;
+        bQueenCastlingRights = true;
     }
 
     /**
@@ -60,16 +68,83 @@ public class Board {
     }
 
     /**
-     * Applies a move to the board.
+     * Returns whether a given player has kingside castling rights.
+     *
+     * @param c The color of the player.
+     * @return whether the given player has kingside castling rights.
+     */
+    public Boolean getKingCastlingRights(Color c) {
+        if (c == Color.WHITE) return wKingCastlingRights;
+        else if (c == Color.BLACK) return bKingCastlingRights;
+        else throw new IllegalArgumentException("Illegal color: " + c);
+    }
+
+    /**
+     * Returns whether a given player has queenside castling rights.
+     *
+     * @param c The color of the player.
+     * @return whether the given player has queenside castling rights.
+     */
+    public Boolean getQueenCastlingRights(Color c) {
+        if (c == Color.WHITE) return wQueenCastlingRights;
+        else if (c == Color.BLACK) return bQueenCastlingRights;
+        else throw new IllegalArgumentException("Illegal color: " + c);
+    }
+
+    private void removeKingCastlingRights(Color c) {
+        if (c == Color.WHITE) wKingCastlingRights = false;
+        else if (c == Color.BLACK) bKingCastlingRights = false;
+        else throw new IllegalArgumentException("Illegal color: " + c);
+    }
+
+    private void removeQueenCastlingRights(Color c) {
+        if (c == Color.WHITE) wQueenCastlingRights = false;
+        else if (c == Color.BLACK) bQueenCastlingRights = false;
+        else throw new IllegalArgumentException("Illegal color: " + c);
+    }
+
+    /**
+     * Applies a Move to the board.
      *
      * @param m The move to apply.
      */
     public void makeMove(Move m) {
+        if (m instanceof RegularMove) makeMove((RegularMove) m);
+        else if (m instanceof CastlingMove) makeMove((CastlingMove) m);
+        else throw new UnsupportedOperationException("Move type " + m.getClass().getSimpleName() + "not implemented.");
+        moveHistory.push(m);
+        toMove = toMove.swap();
+    }
+
+    /**
+     * Applies a RegularMove to the board.
+     *
+     * @param m The move to apply.
+     */
+    private void makeMove(RegularMove m) {
         m.setDestinationPiece(position[m.getR2()][m.getC2()]);
         position[m.getR2()][m.getC2()] = position[m.getR1()][m.getC1()];
         position[m.getR1()][m.getC1()] = Piece.EMPTY;
-        moveHistory.push(m);
-        toMove = toMove.swap();   // flips to the other player
+
+    }
+
+    /**
+     * Applies a CastlingMove to the board.
+     *
+     * @param m The move to apply.
+     */
+    private void makeMove(CastlingMove m) {
+        position[m.getR2()][m.getC2()] = position[m.getR1()][m.getC1()];
+        position[m.getR1()][m.getC1()] = Piece.EMPTY;
+        if (m.getC2() == 6) { // kingside
+            position[m.getR2()][5] = position[m.getR2()][7];
+            position[m.getR2()][7] = Piece.EMPTY;
+        } else {
+            position[m.getR2()][3] = position[m.getR2()][0];
+            position[m.getR2()][0] = Piece.EMPTY;
+        }
+        removeKingCastlingRights(m.getPiece().getColor());
+        removeQueenCastlingRights(m.getPiece().getColor());
     }
 
     /**
@@ -78,7 +153,14 @@ public class Board {
     public void unmakeMove() {
         Move m = moveHistory.pop();
         position[m.getR1()][m.getC1()] = position[m.getR2()][m.getC2()];
-        position[m.getR2()][m.getC2()] = m.getDestinationPiece();
+
+        if (m instanceof RegularMove)
+            position[m.getR2()][m.getC2()] = ((RegularMove) m).getDestinationPiece();
+        else if (m instanceof CastlingMove) {
+            position[m.getR2()][m.getC2()] = Piece.EMPTY;
+        }
+        else throw new UnsupportedOperationException("Move type " + m.getClass().getSimpleName() + "not implemented.");
+
         toMove = toMove.swap();   // flips to the other player
     }
 
@@ -124,17 +206,17 @@ public class Board {
      */
     @Override
     public String toString() {
-        String boardString = "";
+        StringBuilder boardString = new StringBuilder();
         for (int i = 0; i < 8; i++) {
-            boardString += "   --- --- --- --- --- --- --- --- \n";
-            boardString += (8 - i) + " | ";
+            boardString.append("   --- --- --- --- --- --- --- --- \n");
+            boardString.append(8 - i).append(" | ");
             for (int j = 0; j < 8; j++) {
-                boardString += position[i][j] + " | ";
+                boardString.append(position[i][j]).append(" | ");
             }
-            boardString += "\n";
+            boardString.append("\n");
         }
-        boardString += "   --- --- --- --- --- --- --- --- \n";
-        boardString += "    A   B   C   D   E   F   G   H  \n";
-        return boardString;
+        boardString.append("   --- --- --- --- --- --- --- --- \n");
+        boardString.append("    A   B   C   D   E   F   G   H  \n");
+        return boardString.toString();
     }
 }

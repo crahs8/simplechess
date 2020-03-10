@@ -27,7 +27,7 @@ public class MoveGenerator {
             for (int j = 0; j < 8; j++) {
                 Piece p = board.getPiece(i, j);
                 if(p.getColor() != board.getToMove()) continue;
-                generatePieceMoves(i, j, p.getType(), board.getToMove(), moves);
+                generatePieceMoves(i, j, p, moves);
             }
         }
 
@@ -68,24 +68,24 @@ public class MoveGenerator {
      * @return whether a square is attacked.
      */
     private boolean squareAttacked(int r, int c, Color color) {
-        Color opColor = color.swap();
-        Piece pawn = new Piece(Piece.Type.PAWN, opColor);
-        Piece knight = new Piece(Piece.Type.PAWN, opColor);
-        Piece bishop = new Piece(Piece.Type.PAWN, opColor);
-        Piece rook = new Piece(Piece.Type.PAWN, opColor);
-        Piece queen = new Piece(Piece.Type.PAWN, opColor);
+        Piece pawn   = new Piece(Piece.Type.PAWN, color);
+        Piece knight = new Piece(Piece.Type.KNIGHT, color);
+        Piece bishop = new Piece(Piece.Type.BISHOP, color);
+        Piece rook   = new Piece(Piece.Type.ROOK, color);
+        Piece queen  = new Piece(Piece.Type.QUEEN, color);
         Piece[] pieces = {pawn, knight, bishop, rook, queen};
 
         List<List<Move>> allAttacks = new ArrayList<>();
         for (Piece piece : pieces) {
             List<Move> pieceMoves = new ArrayList<>();
-            generatePieceMoves(r, c, piece.getType(), color, pieceMoves);
+            generatePieceMoves(r, c, piece, pieceMoves);
             allAttacks.add(pieceMoves);
         }
 
         for (int i = 0; i < pieces.length; i++) {
             for (Move m : allAttacks.get(i)) {
-                if (board.squareHasPiece(m.getR2(), m.getC2(), pieces[i]))
+                Piece dest = board.getPiece(m.getR2(), m.getC2());
+                if (dest.getType() == pieces[i].getType() && dest.getColor().swap() == pieces[i].getColor())
                     return true;
             }
         }
@@ -110,36 +110,35 @@ public class MoveGenerator {
     }
 
     /**
-     * Generates and adds to a list with all moves of a given piece type from a given square by a given player.
+     * Generates and adds to a list with all moves of a given piece from a given square.
      *
      * @param r         The row of the square.
      * @param c         The column of the square.
-     * @param type      The type of piece to generate for.
-     * @param toPlay    The color of the player.
+     * @param piece     The piece.
      * @param moves     The list of moves to add to.
      */
-    private void generatePieceMoves(int r, int c, Piece.Type type, Color toPlay, List<Move> moves) {
-        switch (type) {
+    private void generatePieceMoves(int r, int c, Piece piece, List<Move> moves) {
+        switch (piece.getType()) {
             case PAWN:
-                generatePawnMoves(r, c, toPlay, moves);
+                generatePawnMoves(r, c, piece, moves);
                 break;
             case KNIGHT:
-                generateKnightMoves(r, c, toPlay, moves);
+                generateKnightMoves(r, c, piece, moves);
                 break;
             case BISHOP:
-                generateBishopMoves(r, c, toPlay, moves);
+                generateBishopMoves(r, c, piece, moves);
                 break;
             case ROOK:
-                generateRookMoves(r, c, toPlay, moves);
+                generateRookMoves(r, c, piece, moves);
                 break;
             case QUEEN:
-                generateQueenMoves(r, c, toPlay, moves);
+                generateQueenMoves(r, c, piece, moves);
                 break;
             case KING:
-                generateKingMoves(r, c, toPlay, moves);
+                generateKingMoves(r, c, piece, moves);
                 break;
             default:
-                throw new IllegalArgumentException(type + " is not a valid piece type.");
+                throw new IllegalArgumentException(piece + " is not a valid piece.");
         }
     }
 
@@ -155,42 +154,44 @@ public class MoveGenerator {
     }
 
     /**
-     * Adds all non-sliding moves to a list of moves from matching arrays indicating steps along the row and column.
+     * Adds all non-sliding moves to a list of moves from matching arrays
+     * indicating steps along the row and column with a given piece.
      *
      * @param r         The origin square's row.
      * @param c         The origin square's column.
      * @param rowSteps  The step size along the row.
      * @param colSteps  The step size along the column.
-     * @param toPlay    The color of the player.
+     * @param piece     The piece.
      * @param moves     THe list of moves to add to.
      */
-    private void addMoves(int r, int c, int[] rowSteps, int[] colSteps, Color toPlay, List<Move> moves) {
+    private void addMoves(int r, int c, int[] rowSteps, int[] colSteps, Piece piece, List<Move> moves) {
         for (int i = 0; i < rowSteps.length; i++) {
             int row = r + rowSteps[i];
             int col = c + colSteps[i];
-            if (squareOnBoard(row, col) && board.squareCapturableBy(row, col, toPlay))
-                moves.add(new Move(r, c, row, col));
+            if (squareOnBoard(row, col) && board.squareCapturableBy(row, col, piece.getColor()))
+                moves.add(new RegularMove(r, c, row, col, piece));
         }
     }
 
     /**
-     * Adds all sliding moves to a list of moves from matching arrays indicating directions along the row and column.
+     * Adds all sliding moves to a list of moves from matching arrays
+     * indicating directions along the row and column with a given piece.
      *
      * @param r         The origin square's row.
      * @param c         The origin square's column.
      * @param rowDir    The direction along the row.
      * @param colDir    The direction along the column.
-     * @param toPlay    The color of the player.
+     * @param piece     THe piece.
      * @param moves     THe list of moves to add to.
      */
-    private void addMovesSliders(int r, int c, int[] rowDir, int[] colDir, Color toPlay, List<Move> moves) {
+    private void addMovesSliders(int r, int c, int[] rowDir, int[] colDir, Piece piece, List<Move> moves) {
         for (int i = 0; i < rowDir.length; i++) {
             for (int j = r + rowDir[i], k = c + colDir[i]; squareOnBoard(j, k); j += rowDir[i], k += colDir[i]) {
                 Piece destPiece = board.getPiece(j, k);
-                if (destPiece == Piece.EMPTY) moves.add(new Move(r, c, j, k));
-                else if (destPiece.getColor() == toPlay) break;
+                if (destPiece == Piece.EMPTY) moves.add(new RegularMove(r, c, j, k, piece));
+                else if (destPiece.getColor() == piece.getColor()) break;
                 else {
-                    moves.add(new Move(r, c, j, k));
+                    moves.add(new RegularMove(r, c, j, k, piece));
                     break;
                 }
             }
@@ -198,16 +199,16 @@ public class MoveGenerator {
     }
 
     /**
-     * Generates and adds to a list with all pawn moves from a given square by a given player.
+     * Generates and adds to a list with all pawn moves from a given square with a given piece.
      *
      * @param r         The row of the square.
      * @param c         The column of the square.
-     * @param toPlay    The color of the player.
+     * @param piece     The piece.
      * @param moves     The list of moves to add to.
      */
-    private void generatePawnMoves(int r, int c, Color toPlay, List<Move> moves) {
+    private void generatePawnMoves(int r, int c, Piece piece, List<Move> moves) {
         int secondRow, forward, forward2;
-        if(toPlay == Color.WHITE) {
+        if(piece.getColor() == Color.WHITE) {
             secondRow = 6;
             forward = r - 1;
             forward2 = r - 2;
@@ -223,90 +224,102 @@ public class MoveGenerator {
         // 2 forward
         if (r == secondRow && board.squareHasPiece(forward, c, Piece.EMPTY)
                 && board.squareHasPiece(forward2, c, Piece.EMPTY))
-            moves.add(new Move(r, c, forward2, c));
+            moves.add(new RegularMove(r, c, forward2, c, piece));
         // Diagonal left
-        if (c > 0 && board.getPiece(forward, c - 1).getColor() == toPlay.swap())
-            moves.add(new Move(r, c, forward, c - 1));
+        if (c > 0 && board.getPiece(forward, c - 1).getColor() == piece.getColor().swap())
+            moves.add(new RegularMove(r, c, forward, c - 1, piece));
         // Diagonal right
-        if (c < 7 && board.getPiece(forward, c + 1).getColor() == toPlay.swap())
-            moves.add(new Move(r, c, forward, c + 1));
+        if (c < 7 && board.getPiece(forward, c + 1).getColor() == piece.getColor().swap())
+            moves.add(new RegularMove(r, c, forward, c + 1, piece));
     }
 
     /**
-     * Generates and adds to a list with all knight moves from a given square by a given player.
+     * Generates and adds to a list with all knight moves from a given square with a given piece.
      *
      * @param r         The row of the square.
      * @param c         The column of the square.
-     * @param toPlay    The color of the player.
+     * @param piece     The piece.
      * @param moves     The list of moves to add to.
      */
-    private void generateKnightMoves(int r, int c, Color toPlay, List<Move> moves) {
+    private void generateKnightMoves(int r, int c, Piece piece, List<Move> moves) {
         int[] rowSteps = {1, 1, 2, 2, -1, -1, -2, -2};
         int[] colSteps = {2, -2, 1, -1, 2, -2, 1, -1};
 
-        addMoves(r, c, rowSteps, colSteps, toPlay, moves);
+        addMoves(r, c, rowSteps, colSteps, piece, moves);
     }
 
     /**
-     * Generates and adds to a list with all bishop moves from a given square by a given player.
+     * Generates and adds to a list with all bishop moves from a given square with a given piece.
      *
      * @param r         The row of the square.
      * @param c         The column of the square.
-     * @param toPlay    The color of the player.
+     * @param piece     The piece.
      * @param moves     The list of moves to add to.
      */
-    private void generateBishopMoves(int r, int c, Color toPlay , List<Move> moves) {
+    private void generateBishopMoves(int r, int c, Piece piece , List<Move> moves) {
         int[] rowDir = {1, 1, -1, -1};
         int[] colDir = {1, -1, 1, -1};
 
-        addMovesSliders(r, c, rowDir, colDir, toPlay, moves);
+        addMovesSliders(r, c, rowDir, colDir, piece, moves);
     }
 
     /**
-     * Generates and adds to a list with all rook moves from a given square by a given player.
+     * Generates and adds to a list with all rook moves from a given square with a given piece.
      *
      * @param r         The row of the square.
      * @param c         The column of the square.
-     * @param toPlay    The color of the player.
+     * @param piece     The piece.
      * @param moves     The list of moves to add to.
      */
-    private void generateRookMoves(int r, int c, Color toPlay, List<Move> moves) {
+    private void generateRookMoves(int r, int c, Piece piece, List<Move> moves) {
         int[] rowDir = {1, -1, 0, 0};
         int[] colDir = {0, 0, 1, -1};
 
-        addMovesSliders(r, c, rowDir, colDir, toPlay, moves);
+        addMovesSliders(r, c, rowDir, colDir, piece, moves);
     }
 
     /**
-     * Generates and adds to a list with all queen moves from a given square by a given player.
+     * Generates and adds to a list with all queen moves from a given square with a given piece.
      *
      * @param r         The row of the square.
      * @param c         The column of the square.
-     * @param toPlay    The color of the player.
+     * @param piece     The piece.
      * @param moves     The list of moves to add to.
      */
-    private void generateQueenMoves(int r, int c, Color toPlay, List<Move> moves) {
-        generateBishopMoves(r, c, toPlay, moves);
-        generateRookMoves(r, c, toPlay, moves);
+    private void generateQueenMoves(int r, int c, Piece piece, List<Move> moves) {
+        generateBishopMoves(r, c, piece, moves);
+        generateRookMoves(r, c, piece, moves);
     }
 
     /**
-     * Generates and adds to a list with all king moves from a given square by a given player.
+     * Generates and adds to a list with all king moves from a given square with a given piece.
      *
      * @param r         The row of the square.
      * @param c         The column of the square.
-     * @param toPlay    The color of the player.
+     * @param piece     The piece.
      * @param moves     The list of moves to add to.
      */
-    private void generateKingMoves(int r, int c, Color toPlay, List<Move> moves) {
+    private void generateKingMoves(int r, int c, Piece piece, List<Move> moves) {
         int[] rowSteps = {1, -1, 0, 0, 1, 1, -1, -1};
         int[] colSteps = {0, 0, 1, -1, 1, -1, 1, -1};
 
-        addMoves(r, c, rowSteps, colSteps, toPlay, moves);
+        addMoves(r, c, rowSteps, colSteps, piece, moves);
 
-        // kingside castle
-        /*if (toPlay == Color.WHITE) {
-            if ()
-        }*/
+        // castling (assumes (r, c) square actually contains the king)
+        // kingside
+        if (board.getKingCastlingRights(piece.getColor())   &&  // rook or king wasn't moved
+                !squareAttacked(r, 4, piece.getColor())     &&  // king is not in check
+                !squareAttacked(r, 5, piece.getColor())     &&  // square between origin and destination not attacked
+                board.squareHasPiece(r, 5, Piece.EMPTY)     &&
+                board.squareHasPiece(r, 6, Piece.EMPTY))        // squares between king and rook empty
+            moves.add(new CastlingMove(6, piece));
+        // queenside
+        if (board.getQueenCastlingRights(piece.getColor())  &&  // rook or king wasn't moved
+                !squareAttacked(r, 4, piece.getColor())     &&  // king is not in check
+                !squareAttacked(r, 3, piece.getColor())     &&  // square between origin and destination not attacked
+                board.squareHasPiece(r, 3, Piece.EMPTY)     &&
+                board.squareHasPiece(r, 2, Piece.EMPTY)     &&
+                board.squareHasPiece(r, 1, Piece.EMPTY))        // squares between king and rook empty
+            moves.add(new CastlingMove(2, piece));
     }
 }

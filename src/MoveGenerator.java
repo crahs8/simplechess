@@ -6,6 +6,8 @@ import java.util.*;
 public class MoveGenerator {
     private Board board;
 
+    private static final Piece.Type[] pawnPromotions = {Piece.Type.KNIGHT, Piece.Type.BISHOP, Piece.Type.ROOK, Piece.Type.QUEEN};
+
     /**
      * Constructs a MoveGenerator for the given board.
      *
@@ -207,30 +209,50 @@ public class MoveGenerator {
      * @param moves     The list of moves to add to.
      */
     private void generatePawnMoves(int r, int c, Piece piece, List<Move> moves) {
-        int secondRow, forward, forward2;
+        int secondRow, lastRow, forward, forward2;
         if(piece.getColor() == Color.WHITE) {
-            secondRow = 6;
             forward = r - 1;
             forward2 = r - 2;
         } else {
-            secondRow = 1;
             forward = r + 1;
             forward2 = r + 2;
         }
+        secondRow = Board.getRow(1, piece.getColor());
+        lastRow = Board.getRow(7, piece.getColor());
 
         // 1 forward
-        if (board.squareHasPiece(forward, c, Piece.EMPTY))
-
+        if (board.squareHasPiece(forward, c, Piece.EMPTY)) {
+            if(forward == lastRow)
+                for (Piece.Type t : pawnPromotions) moves.add(new PromotionMove(r, c, forward, c, piece, t));
+            else moves.add(new RegularMove(r, c, forward, c, piece));
+        }
         // 2 forward
         if (r == secondRow && board.squareHasPiece(forward, c, Piece.EMPTY)
                 && board.squareHasPiece(forward2, c, Piece.EMPTY))
             moves.add(new RegularMove(r, c, forward2, c, piece));
         // Diagonal left
-        if (c > 0 && board.getPiece(forward, c - 1).getColor() == piece.getColor().swap())
-            moves.add(new RegularMove(r, c, forward, c - 1, piece));
+        if (c > 0 && board.getPiece(forward, c - 1).getColor() == piece.getColor().swap()) {
+            if(forward == lastRow)
+                for (Piece.Type t : pawnPromotions) moves.add(new PromotionMove(r, c, forward, c - 1, piece, t));
+            else moves.add(new RegularMove(r, c, forward, c - 1, piece));
+        }
         // Diagonal right
-        if (c < 7 && board.getPiece(forward, c + 1).getColor() == piece.getColor().swap())
-            moves.add(new RegularMove(r, c, forward, c + 1, piece));
+        if (c < 7 && board.getPiece(forward, c + 1).getColor() == piece.getColor().swap()) {
+            if(forward == lastRow)
+                for (Piece.Type t : pawnPromotions) moves.add(new PromotionMove(r, c, forward, c + 1, piece, t));
+            else moves.add(new RegularMove(r, c, forward, c + 1, piece));
+        }
+        // En passant
+        Move lastMove = board.getLastMove();
+        if (lastMove != null
+                && lastMove.getPiece().getType() == Piece.Type.PAWN
+                && lastMove.getR1() == Board.getRow(6, piece.getColor())
+                && lastMove.getR2() == r) {
+            // left
+            if (lastMove.getC2() == c - 1) moves.add(new EnPassantMove(c, c-1, piece));
+            //right
+            else if (lastMove.getC2() == c + 1) moves.add(new EnPassantMove(c, c+1, piece));
+        }
     }
 
     /**

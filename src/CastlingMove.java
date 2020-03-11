@@ -9,11 +9,13 @@ public class CastlingMove extends Move {
      * @param piece The piece.
      */
     public CastlingMove(int c, Piece piece) {
-        this(piece.getColor() == Color.WHITE ? 7 : 0, c, piece);
+        this(Board.getRow(0, piece.getColor()), c, piece);
+        if (c != 6 && c != 2) throw new IllegalArgumentException("Illegal destination column " + c);
     }
 
     private CastlingMove(int r, int c, Piece p) {
         super(r, 4, r, c, p);
+        setDestinationPiece(Piece.EMPTY);
     }
 
     /**

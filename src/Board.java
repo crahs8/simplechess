@@ -39,6 +39,20 @@ public class Board {
     }
 
     /**
+     * Converts a relative row corresponding to a given player to an absolute row.
+     *
+     * @param r The relative row.
+     * @param c The color.
+     * @return the absolute row corresponding to the relative row.
+     */
+    public static int getRow(int r, Color c) {
+        if (c == Color.WHITE) {
+            return 7 - r;
+        }
+        return  r;
+    }
+
+    /**
      * Converts a 2d array of chars to a 2d array of Piece-objects.
      *
      * @param setup The 2d char array.
@@ -61,6 +75,10 @@ public class Board {
      */
     public List<Move> getLegalMoves() {
         return moveGen.generateMoves();
+    }
+
+    public Move getLastMove() {
+        return moveHistory.empty() ? null : moveHistory.peek();
     }
 
     public Color getToMove() {
@@ -111,7 +129,9 @@ public class Board {
     public void makeMove(Move m) {
         if (m instanceof RegularMove) makeMove((RegularMove) m);
         else if (m instanceof CastlingMove) makeMove((CastlingMove) m);
-        else throw new UnsupportedOperationException("Move type " + m.getClass().getSimpleName() + "not implemented.");
+        else if (m instanceof PromotionMove) makeMove((PromotionMove) m);
+        else if (m instanceof EnPassantMove) makeMove((EnPassantMove) m);
+        else throw new UnsupportedOperationException("Move type " + m.getClass().getSimpleName() + " not implemented.");
         moveHistory.push(m);
         toMove = toMove.swap();
     }
@@ -125,7 +145,13 @@ public class Board {
         m.setDestinationPiece(position[m.getR2()][m.getC2()]);
         position[m.getR2()][m.getC2()] = position[m.getR1()][m.getC1()];
         position[m.getR1()][m.getC1()] = Piece.EMPTY;
-
+        if (m.getPiece().getType() == Piece.Type.KING) {
+            removeKingCastlingRights(m.getPiece().getColor());
+            removeQueenCastlingRights(m.getPiece().getColor());
+        } else if (m.getPiece().getType() == Piece.Type.ROOK && m.getR1() == getRow(0, m.getPiece().getColor())) {
+            if (m.getC1() == 7) removeKingCastlingRights(m.getPiece().getColor());
+            else if (m.getC1() == 0) removeQueenCastlingRights(m.getPiece().getColor());
+        }
     }
 
     /**
@@ -148,20 +174,55 @@ public class Board {
     }
 
     /**
+     * Applies a PromotionMove to the board.
+     *
+     * @param m The move to apply.
+     */
+    private void makeMove(PromotionMove m) {
+        m.setDestinationPiece(position[m.getR2()][m.getC2()]);
+        position[m.getR2()][m.getC2()] = new Piece(m.getPromotion(), m.getPiece().getColor());
+        position[m.getR1()][m.getC1()] = Piece.EMPTY;
+    }
+
+    /**
+     * Applies a EnPassantMove to the board.
+     *
+     * @param m The move to apply.
+     */
+    private void makeMove(EnPassantMove m) {
+        int captureRow = Board.getRow(4, m.getPiece().getColor());
+        m.setDestinationPiece(position[captureRow][m.getC2()]);
+        position[m.getR2()][m.getC2()] = position[m.getR1()][m.getC1()];
+        position[m.getR1()][m.getC1()] = Piece.EMPTY;
+        position[captureRow][m.getC2()] = Piece.EMPTY;
+    }
+
+    /**
      * Undoes the last move.
      */
     public void unmakeMove() {
         Move m = moveHistory.pop();
-        position[m.getR1()][m.getC1()] = position[m.getR2()][m.getC2()];
+        position[m.getR1()][m.getC1()] = m.getPiece();
 
-        if (m instanceof RegularMove)
-            position[m.getR2()][m.getC2()] = ((RegularMove) m).getDestinationPiece();
+        if (m instanceof RegularMove || m instanceof PromotionMove)
+            position[m.getR2()][m.getC2()] = m.getDestinationPiece();
         else if (m instanceof CastlingMove) {
             position[m.getR2()][m.getC2()] = Piece.EMPTY;
+            if (m.getC2() == 6) {   // kingside
+                position[m.getR2()][7] = position[m.getR2()][5];
+                position[m.getR2()][5] = Piece.EMPTY;
+            } else {                // queenside
+                position[m.getR2()][0] = position[m.getR2()][3];
+                position[m.getR2()][3] = Piece.EMPTY;
+            }
         }
-        else throw new UnsupportedOperationException("Move type " + m.getClass().getSimpleName() + "not implemented.");
+        else if (m instanceof EnPassantMove) {
+            position[m.getR2()][m.getC2()] = Piece.EMPTY;
+            position[Board.getRow(4, m.getPiece().getColor())][m.getC2()] = m.getDestinationPiece();
+        }
+        else throw new UnsupportedOperationException("Move type " + m.getClass().getSimpleName() + " not implemented.");
 
-        toMove = toMove.swap();   // flips to the other player
+        toMove = toMove.swap();
     }
 
     /**

@@ -45,9 +45,8 @@ public class MoveGenerator {
      * @return whether the move places the king in check.
      */
     private boolean moveLegal(Move m) {
-        boolean legal;
         board.makeMove(m);
-        legal = !isCheck(board.getToMove());
+        boolean legal = !isCheck(m.getPiece().getColor());
         board.unmakeMove();
         return legal;
     }
@@ -329,19 +328,19 @@ public class MoveGenerator {
 
         // castling (assumes (r, c) square actually contains the king)
         // kingside
-        if (board.getKingCastlingRights(piece.getColor())   &&  // rook or king wasn't moved
-                !squareAttacked(r, 4, piece.getColor())     &&  // king is not in check
-                !squareAttacked(r, 5, piece.getColor())     &&  // square between origin and destination not attacked
-                board.squareHasPiece(r, 5, Piece.EMPTY)     &&
-                board.squareHasPiece(r, 6, Piece.EMPTY))        // squares between king and rook empty
+        if (board.getCastlingRights().getKingside(piece.getColor())     // rook or king wasn't moved
+                && !squareAttacked(r, 4, piece.getColor())              // king is not in check
+                && !squareAttacked(r, 5, piece.getColor())              // square between origin and destination not attacked
+                && board.squareHasPiece(r, 5, Piece.EMPTY)
+                && board.squareHasPiece(r, 6, Piece.EMPTY))             // squares between king and rook empty
             moves.add(new CastlingMove(6, piece));
         // queenside
-        if (board.getQueenCastlingRights(piece.getColor())  &&  // rook or king wasn't moved
-                !squareAttacked(r, 4, piece.getColor())     &&  // king is not in check
-                !squareAttacked(r, 3, piece.getColor())     &&  // square between origin and destination not attacked
-                board.squareHasPiece(r, 3, Piece.EMPTY)     &&
-                board.squareHasPiece(r, 2, Piece.EMPTY)     &&
-                board.squareHasPiece(r, 1, Piece.EMPTY))        // squares between king and rook empty
+        if (board.getCastlingRights().getQueenside(piece.getColor())    // rook or king wasn't moved
+                && !squareAttacked(r, 4, piece.getColor())              // king is not in check
+                && !squareAttacked(r, 3, piece.getColor())              // square between origin and destination not attacked
+                && board.squareHasPiece(r, 3, Piece.EMPTY)
+                && board.squareHasPiece(r, 2, Piece.EMPTY)
+                && board.squareHasPiece(r, 1, Piece.EMPTY))             // squares between king and rook empty
             moves.add(new CastlingMove(2, piece));
     }
 }

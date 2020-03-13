@@ -8,16 +8,15 @@ public class Board {
     private final Piece[][] position;
     private final MoveGenerator moveGen;
     private final Stack<Move> moveHistory;
+    private final CastlingRights castlingRights;
     private Color toMove;
-    private Boolean wKingCastlingRights;
-    private Boolean wQueenCastlingRights;
-    private Boolean bKingCastlingRights;
-    private Boolean bQueenCastlingRights;
+    private int fiftyMoveClock;
+    private int moveNumber;
 
     /**
-     * Constructs a Board object.
+     * Constructs a Board object of the normal chess stating position.
      */
-    Board() {
+    public Board() {
         char[][] setup = new char[][]{
                 {'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'},
                 {'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'},
@@ -32,10 +31,29 @@ public class Board {
         moveGen = new MoveGenerator(this);
         moveHistory = new Stack<>();
         toMove = Color.WHITE;
-        wKingCastlingRights = true;
-        wQueenCastlingRights = true;
-        bKingCastlingRights = true;
-        bQueenCastlingRights = true;
+        castlingRights = new CastlingRights();
+        fiftyMoveClock = 0;
+        moveNumber = 1;
+    }
+
+    /**
+     * Constructs a Board object from a given Piece array position,
+     * player to move, optional last move and given castling rights.
+     *
+     * @param position          The position.
+     * @param toMove            The player to move.
+     * @param lastMove          Optional last move, can be null if no move is provided.
+     * @param castlingRights    The castling rights.
+     */
+    public Board(Piece[][] position, Color toMove, Move lastMove, CastlingRights castlingRights, int fiftyMoveClock, int moveNumber) {
+        this.position = position;
+        moveGen = new MoveGenerator(this);
+        moveHistory = new Stack<>();
+        this.toMove = toMove;
+        if (lastMove != null) moveHistory.push(lastMove);
+        this.castlingRights = castlingRights;
+        this.fiftyMoveClock = fiftyMoveClock;
+        this.moveNumber = moveNumber;
     }
 
     /**
@@ -85,40 +103,8 @@ public class Board {
         return toMove;
     }
 
-    /**
-     * Returns whether a given player has kingside castling rights.
-     *
-     * @param c The color of the player.
-     * @return whether the given player has kingside castling rights.
-     */
-    public Boolean getKingCastlingRights(Color c) {
-        if (c == Color.WHITE) return wKingCastlingRights;
-        else if (c == Color.BLACK) return bKingCastlingRights;
-        else throw new IllegalArgumentException("Illegal color: " + c);
-    }
-
-    /**
-     * Returns whether a given player has queenside castling rights.
-     *
-     * @param c The color of the player.
-     * @return whether the given player has queenside castling rights.
-     */
-    public Boolean getQueenCastlingRights(Color c) {
-        if (c == Color.WHITE) return wQueenCastlingRights;
-        else if (c == Color.BLACK) return bQueenCastlingRights;
-        else throw new IllegalArgumentException("Illegal color: " + c);
-    }
-
-    private void removeKingCastlingRights(Color c) {
-        if (c == Color.WHITE) wKingCastlingRights = false;
-        else if (c == Color.BLACK) bKingCastlingRights = false;
-        else throw new IllegalArgumentException("Illegal color: " + c);
-    }
-
-    private void removeQueenCastlingRights(Color c) {
-        if (c == Color.WHITE) wQueenCastlingRights = false;
-        else if (c == Color.BLACK) bQueenCastlingRights = false;
-        else throw new IllegalArgumentException("Illegal color: " + c);
+    public CastlingRights getCastlingRights() {
+        return castlingRights;
     }
 
     /**
@@ -134,6 +120,7 @@ public class Board {
         else throw new UnsupportedOperationException("Move type " + m.getClass().getSimpleName() + " not implemented.");
         moveHistory.push(m);
         toMove = toMove.swap();
+        if (toMove == Color.WHITE) moveNumber++;
     }
 
     /**
@@ -145,13 +132,18 @@ public class Board {
         m.setDestinationPiece(position[m.getR2()][m.getC2()]);
         position[m.getR2()][m.getC2()] = position[m.getR1()][m.getC1()];
         position[m.getR1()][m.getC1()] = Piece.EMPTY;
+        // remove castling rights if necessary
         if (m.getPiece().getType() == Piece.Type.KING) {
-            removeKingCastlingRights(m.getPiece().getColor());
-            removeQueenCastlingRights(m.getPiece().getColor());
-        } else if (m.getPiece().getType() == Piece.Type.ROOK && m.getR1() == getRow(0, m.getPiece().getColor())) {
-            if (m.getC1() == 7) removeKingCastlingRights(m.getPiece().getColor());
-            else if (m.getC1() == 0) removeQueenCastlingRights(m.getPiece().getColor());
+            castlingRights.removeKingside(m.getPiece().getColor());
+            castlingRights.removeQueenside(m.getPiece().getColor());
+        } else if (m.getPiece().getType() == Piece.Type.ROOK) {
+            if (m.getC1() == 7) castlingRights.removeKingside(m.getPiece().getColor());
+            else if (m.getC1() == 0) castlingRights.removeQueenside(m.getPiece().getColor());
         }
+        // increment or reset fifty move rule clock
+        if (m.getPiece().getType() == Piece.Type.PAWN || m.getDestinationPiece() != Piece.EMPTY)
+            fiftyMoveClock = 0;
+        else fiftyMoveClock ++;
     }
 
     /**
@@ -169,8 +161,9 @@ public class Board {
             position[m.getR2()][3] = position[m.getR2()][0];
             position[m.getR2()][0] = Piece.EMPTY;
         }
-        removeKingCastlingRights(m.getPiece().getColor());
-        removeQueenCastlingRights(m.getPiece().getColor());
+        castlingRights.removeKingside(m.getPiece().getColor());
+        castlingRights.removeQueenside(m.getPiece().getColor());
+        fiftyMoveClock++;
     }
 
     /**
@@ -182,6 +175,7 @@ public class Board {
         m.setDestinationPiece(position[m.getR2()][m.getC2()]);
         position[m.getR2()][m.getC2()] = new Piece(m.getPromotion(), m.getPiece().getColor());
         position[m.getR1()][m.getC1()] = Piece.EMPTY;
+        fiftyMoveClock = 0;
     }
 
     /**
@@ -195,6 +189,7 @@ public class Board {
         position[m.getR2()][m.getC2()] = position[m.getR1()][m.getC1()];
         position[m.getR1()][m.getC1()] = Piece.EMPTY;
         position[captureRow][m.getC2()] = Piece.EMPTY;
+        fiftyMoveClock = 0;
     }
 
     /**
@@ -279,5 +274,62 @@ public class Board {
         boardString.append("   --- --- --- --- --- --- --- --- \n");
         boardString.append("    A   B   C   D   E   F   G   H  \n");
         return boardString.toString();
+    }
+
+    public static class CastlingRights {
+        private boolean wKingCastlingRights;
+        private boolean wQueenCastlingRights;
+        private boolean bKingCastlingRights;
+        private boolean bQueenCastlingRights;
+
+        public CastlingRights() {
+            wKingCastlingRights = true;
+            wQueenCastlingRights = true;
+            bKingCastlingRights = true;
+            bQueenCastlingRights = true;
+        }
+
+        public CastlingRights(boolean wK, boolean wQ, boolean bK, boolean bQ) {
+            wKingCastlingRights = wK;
+            wQueenCastlingRights = wQ;
+            bKingCastlingRights = bK;
+            bQueenCastlingRights = bQ;
+        }
+
+        /**
+         * Returns whether a given player has kingside castling rights.
+         *
+         * @param c The color of the player.
+         * @return whether the given player has kingside castling rights.
+         */
+        public boolean getKingside(Color c) {
+            if (c == Color.WHITE) return wKingCastlingRights;
+            else if (c == Color.BLACK) return bKingCastlingRights;
+            else throw new IllegalArgumentException("Illegal color: " + c);
+        }
+
+        /**
+         * Returns whether a given player has queenside castling rights.
+         *
+         * @param c The color of the player.
+         * @return whether the given player has queenside castling rights.
+         */
+        public Boolean getQueenside(Color c) {
+            if (c == Color.WHITE) return wQueenCastlingRights;
+            else if (c == Color.BLACK) return bQueenCastlingRights;
+            else throw new IllegalArgumentException("Illegal color: " + c);
+        }
+
+        private void removeKingside(Color c) {
+            if (c == Color.WHITE) wKingCastlingRights = false;
+            else if (c == Color.BLACK) bKingCastlingRights = false;
+            else throw new IllegalArgumentException("Illegal color: " + c);
+        }
+
+        private void removeQueenside(Color c) {
+            if (c == Color.WHITE) wQueenCastlingRights = false;
+            else if (c == Color.BLACK) bQueenCastlingRights = false;
+            else throw new IllegalArgumentException("Illegal color: " + c);
+        }
     }
 }

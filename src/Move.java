@@ -80,6 +80,13 @@ public abstract class Move {
         return (char) (97 + c);
     }
 
+    /**
+     * Creates a string representation of the move. EG. "e2e4".
+     *
+     * @return the string representation of the move.
+     */
     @Override
-    public abstract String toString();
+    public String toString() {
+        return columnToChar(c1) + "" + (8 - r1) + columnToChar(c2) + "" + (8 - r2);
+    }
 }

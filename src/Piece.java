@@ -18,29 +18,11 @@ public class Piece {
     private Piece(char p) {
         if (Character.isLowerCase(p)) {
             this.color = Color.BLACK;
-            p = Character.toUpperCase(p);
         } else this.color = Color.WHITE;
-        switch (p) {
-            case 'P':
-                this.type = Type.PAWN;
-                break;
-            case 'N':
-                this.type = Type.KNIGHT;
-                break;
-            case 'B':
-                this.type = Type.BISHOP;
-                break;
-            case 'R':
-                this.type = Type.ROOK;
-                break;
-            case 'Q':
-                this.type = Type.QUEEN;
-                break;
-            case 'K':
-                this.type = Type.KING;
-                break;
-            default:
-                throw new IllegalArgumentException(p + " is not a valid piece character.");
+        try {
+            this.type = Type.fromChar(p);
+        } catch (ParseException e) {
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -66,6 +48,7 @@ public class Piece {
     public enum Type {
         PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, EMPTY;
 
+        @Override
         public String toString() {
             switch (this) {
                 case PAWN:
@@ -84,6 +67,27 @@ public class Piece {
                     return " ";
                 default:
                     return "?"; // Needed for the compiler to be happy.
+            }
+        }
+
+        public static Type fromChar(char c) throws ParseException {
+            char p = c;
+            if (Character.isLowerCase(c)) p = Character.toUpperCase(c);
+            switch (p) {
+                case 'P':
+                    return PAWN;
+                case 'N':
+                    return KNIGHT;
+                case 'B':
+                    return BISHOP;
+                case 'R':
+                    return ROOK;
+                case 'Q':
+                    return QUEEN;
+                case 'K':
+                    return KING;
+                default:
+                    throw new ParseException(c + " is not a valid piece character");
             }
         }
     }

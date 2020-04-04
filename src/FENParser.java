@@ -91,19 +91,17 @@ public class FENParser {
         return new Board.CastlingRights(wKingCastlingRights, wQueenCastlingRights, bKingCastlingRights, bQueenCastlingRights);
     }
 
-    private static int columnFromChar(char c) throws FENParseException {
-        Set<Character> validColumns = Set.of('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h');
-        if (!validColumns.contains(c)) throw new FENParseException("Illegal en passant target square");
-        return c - 97;
-    }
-
     private static Move parseFourth(String field, Color toMove, Piece[][] position, Board.CastlingRights castlingRights, int fiftyMoveClock)
             throws FENParseException {
         if (field.equals("-")) return null;
         if (field.length() != 2 || !Character.isDigit(field.charAt(1))) throw new FENParseException("Illegal en passant target square");
-        int c = columnFromChar(field.charAt(0));
-        int r = 8 - (field.charAt(1) - '0');
-        if (r > 7) throw new FENParseException("Illegal en passant target square");
+        int r, c;
+        try {
+            r = Square.rowFromChar(field.charAt(1));
+            c = Square.columnFromChar(field.charAt(0));
+        } catch(ParseException e) {
+            throw new FENParseException("Illegal en passant target square: " + e.getMessage());
+        }
         int r1 = r + (toMove == Color.WHITE ? -1 : 1);
         int r2 = r + (toMove == Color.WHITE ? 1 : -1);
         return new RegularMove(r1, c, r2, c, position[r2][c], castlingRights, fiftyMoveClock);
@@ -127,7 +125,7 @@ public class FENParser {
         }
     }
 
-    public static class FENParseException extends Exception {
+    public static class FENParseException extends ParseException {
         public FENParseException(String message) {
             super("FEN not valid: " + message);
         }

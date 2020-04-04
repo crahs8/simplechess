@@ -14,11 +14,11 @@ public class PromotionMove extends Move {
     }
 
     /**
-     * Creates a string representation of the move. EG. "e7-e8: Q".
+     * Creates a string representation of the move. EG. "e7e8q".
      *
      * @return the string representation of the move.
      */
     public String toString() {
-        return columnToChar(c1) + "" + (8 - r1) + "-" + columnToChar(c2) + "" + (8 - r2) + ": " + promotion;
+        return columnToChar(c1) + "" + (8 - r1) + columnToChar(c2) + "" + (8 - r2) + ": " + promotion;
     }
 }

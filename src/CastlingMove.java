@@ -19,11 +19,11 @@ public class CastlingMove extends Move {
     }
 
     /**
-     * Creates a string representation of the move. EG. "White KC" for kingside castling by white.
+     * Creates a string representation of the move. EG. "KC" for kingside castling.
      *
      * @return the string representation of the move.
      */
     public String toString() {
-        return piece.getColor() + " " + (c2 == 6 ? "KC" : "QC");
+        return c2 == 6 ? "KC" : "QC";
     }
 }

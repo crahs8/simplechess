@@ -1,5 +1,7 @@
+import java.io.IOException;
+
 public class Main {
-    public static void main(String[] rawArgs) {
+    public static void main(String[] rawArgs) throws IOException {
         Args args;
         try {
             args = new Args(rawArgs);
@@ -20,8 +22,8 @@ public class Main {
             Perft p = new Perft(board);
             p.diagPerft(args.perftDepth);
         } else {
-            System.out.println(board);
-            System.out.println("Legal Moves: " + board.getLegalMoves());
+            CLI c = new CLI(board);
+            c.startCLI();
         }
     }
 

@@ -4,9 +4,9 @@ import java.util.*;
  * Generates legal moves in the board position.
  */
 public class MoveGenerator {
-    private Board board;
+    private final Board board;
 
-    private static final Piece.Type[] pawnPromotions = {Piece.Type.KNIGHT, Piece.Type.BISHOP, Piece.Type.ROOK, Piece.Type.QUEEN};
+    private static final Piece.Type[] pawnPromotions = { Piece.Type.KNIGHT, Piece.Type.BISHOP, Piece.Type.ROOK, Piece.Type.QUEEN };
 
     /**
      * Constructs a MoveGenerator for the given board.
@@ -74,14 +74,21 @@ public class MoveGenerator {
         Piece bishop = new Piece(Piece.Type.BISHOP, color);
         Piece rook   = new Piece(Piece.Type.ROOK, color);
         Piece queen  = new Piece(Piece.Type.QUEEN, color);
-        Piece[] pieces = {pawn, knight, bishop, rook, queen};
+        Piece[] pieces = { pawn, knight, bishop, rook, queen, null };
 
         List<List<Move>> allAttacks = new ArrayList<>();
-        for (Piece piece : pieces) {
+        for (int i = 0; i < 5; i++) {
             List<Move> pieceMoves = new ArrayList<>();
-            generatePieceMoves(r, c, piece, pieceMoves);
+            generatePieceMoves(r, c, pieces[i], pieceMoves);
             allAttacks.add(pieceMoves);
         }
+
+        // kings have to get handled separately to avoid infinite recursion
+        Piece king = new Piece(Piece.Type.KING, color);
+        pieces[5] = king;
+        List<Move> kingMoves = new ArrayList<>();
+        generateBasicKingMoves(r, c, king, kingMoves);
+        allAttacks.add(kingMoves);
 
         for (int i = 0; i < pieces.length; i++) {
             for (Move m : allAttacks.get(i)) {
@@ -107,7 +114,8 @@ public class MoveGenerator {
                     return squareAttacked(r, c, color);
             }
         }
-        throw new RuntimeException("Somehow didn't find a king...");
+        System.out.println(board);
+        throw new IllegalStateException("Somehow didn't find a king...");
     }
 
     /**
@@ -170,7 +178,7 @@ public class MoveGenerator {
             int row = r + rowSteps[i];
             int col = c + colSteps[i];
             if (squareOnBoard(row, col) && board.squareCapturableBy(row, col, piece.getColor()))
-                moves.add(new RegularMove(r, c, row, col, piece));
+                moves.add(new RegularMove(r, c, row, col, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock()));
         }
     }
 
@@ -189,10 +197,11 @@ public class MoveGenerator {
         for (int i = 0; i < rowDir.length; i++) {
             for (int j = r + rowDir[i], k = c + colDir[i]; squareOnBoard(j, k); j += rowDir[i], k += colDir[i]) {
                 Piece destPiece = board.getPiece(j, k);
-                if (destPiece == Piece.EMPTY) moves.add(new RegularMove(r, c, j, k, piece));
+                if (destPiece == Piece.EMPTY)
+                    moves.add(new RegularMove(r, c, j, k, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock()));
                 else if (destPiece.getColor() == piece.getColor()) break;
                 else {
-                    moves.add(new RegularMove(r, c, j, k, piece));
+                    moves.add(new RegularMove(r, c, j, k, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock()));
                     break;
                 }
             }
@@ -208,7 +217,7 @@ public class MoveGenerator {
      * @param moves     The list of moves to add to.
      */
     private void generatePawnMoves(int r, int c, Piece piece, List<Move> moves) {
-        int secondRow, lastRow, forward, forward2;
+        int forward, forward2, secondRow, lastRow, enPassantRow;
         if(piece.getColor() == Color.WHITE) {
             forward = r - 1;
             forward2 = r - 2;
@@ -218,39 +227,48 @@ public class MoveGenerator {
         }
         secondRow = Board.getRow(1, piece.getColor());
         lastRow = Board.getRow(7, piece.getColor());
+        enPassantRow = Board.getRow(4, piece.getColor());
 
+        // Avoid index out of bounds errors
+        if (r == lastRow) return;
         // 1 forward
         if (board.squareHasPiece(forward, c, Piece.EMPTY)) {
-            if(forward == lastRow)
-                for (Piece.Type t : pawnPromotions) moves.add(new PromotionMove(r, c, forward, c, piece, t));
-            else moves.add(new RegularMove(r, c, forward, c, piece));
+            if(forward == lastRow) for (Piece.Type t : pawnPromotions)
+                moves.add(new PromotionMove(r, c, forward, c, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock(), t));
+            else
+                moves.add(new RegularMove(r, c, forward, c, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock()));
         }
         // 2 forward
         if (r == secondRow && board.squareHasPiece(forward, c, Piece.EMPTY)
                 && board.squareHasPiece(forward2, c, Piece.EMPTY))
-            moves.add(new RegularMove(r, c, forward2, c, piece));
+            moves.add(new RegularMove(r, c, forward2, c, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock()));
         // Diagonal left
         if (c > 0 && board.getPiece(forward, c - 1).getColor() == piece.getColor().swap()) {
-            if(forward == lastRow)
-                for (Piece.Type t : pawnPromotions) moves.add(new PromotionMove(r, c, forward, c - 1, piece, t));
-            else moves.add(new RegularMove(r, c, forward, c - 1, piece));
+            if (forward == lastRow) for (Piece.Type t : pawnPromotions)
+                moves.add(new PromotionMove(r, c, forward, c - 1, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock(), t));
+            else
+                moves.add(new RegularMove(r, c, forward, c - 1, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock()));
         }
         // Diagonal right
         if (c < 7 && board.getPiece(forward, c + 1).getColor() == piece.getColor().swap()) {
-            if(forward == lastRow)
-                for (Piece.Type t : pawnPromotions) moves.add(new PromotionMove(r, c, forward, c + 1, piece, t));
-            else moves.add(new RegularMove(r, c, forward, c + 1, piece));
+            if (forward == lastRow) for (Piece.Type t : pawnPromotions)
+                moves.add(new PromotionMove(r, c, forward, c + 1, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock(), t));
+            else
+                moves.add(new RegularMove(r, c, forward, c + 1, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock()));
         }
         // En passant
         Move lastMove = board.getLastMove();
         if (lastMove != null
                 && lastMove.getPiece().getType() == Piece.Type.PAWN
                 && lastMove.getR1() == Board.getRow(6, piece.getColor())
-                && lastMove.getR2() == r) {
+                && lastMove.getR2() == enPassantRow
+                && r == enPassantRow) {
             // left
-            if (lastMove.getC2() == c - 1) moves.add(new EnPassantMove(c, c-1, piece));
+            if (lastMove.getC2() == c - 1)
+                moves.add(new EnPassantMove(c, c-1, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock()));
             //right
-            else if (lastMove.getC2() == c + 1) moves.add(new EnPassantMove(c, c+1, piece));
+            else if (lastMove.getC2() == c + 1)
+                moves.add(new EnPassantMove(c, c+1, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock()));
         }
     }
 
@@ -313,6 +331,22 @@ public class MoveGenerator {
     }
 
     /**
+     * Generates and adds to a list with basic king moves from a given square with a given piece.
+     * Basic king moves are non-castling moves.
+     *
+     * @param r         The row of the square.
+     * @param c         The column of the square.
+     * @param piece     The piece.
+     * @param moves     The list of moves to add to.
+     */
+    private void generateBasicKingMoves(int r, int c, Piece piece, List<Move> moves) {
+        int[] rowSteps = {1, -1, 0, 0, 1, 1, -1, -1};
+        int[] colSteps = {0, 0, 1, -1, 1, -1, 1, -1};
+
+        addMoves(r, c, rowSteps, colSteps, piece, moves);
+    }
+
+    /**
      * Generates and adds to a list with all king moves from a given square with a given piece.
      *
      * @param r         The row of the square.
@@ -321,26 +355,23 @@ public class MoveGenerator {
      * @param moves     The list of moves to add to.
      */
     private void generateKingMoves(int r, int c, Piece piece, List<Move> moves) {
-        int[] rowSteps = {1, -1, 0, 0, 1, 1, -1, -1};
-        int[] colSteps = {0, 0, 1, -1, 1, -1, 1, -1};
-
-        addMoves(r, c, rowSteps, colSteps, piece, moves);
+        generateBasicKingMoves(r, c, piece, moves);
 
         // castling (assumes (r, c) square actually contains the king)
         // kingside
-        if (board.getCastlingRights().getKingside(piece.getColor())     // rook or king wasn't moved
+        if (board.getCastlingRights().getKingside(piece.getColor())     // still has castling rights
                 && !squareAttacked(r, 4, piece.getColor())              // king is not in check
                 && !squareAttacked(r, 5, piece.getColor())              // square between origin and destination not attacked
                 && board.squareHasPiece(r, 5, Piece.EMPTY)
                 && board.squareHasPiece(r, 6, Piece.EMPTY))             // squares between king and rook empty
-            moves.add(new CastlingMove(6, piece));
+            moves.add(new CastlingMove(6, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock()));
         // queenside
-        if (board.getCastlingRights().getQueenside(piece.getColor())    // rook or king wasn't moved
+        if (board.getCastlingRights().getQueenside(piece.getColor())    // still has castling rights
                 && !squareAttacked(r, 4, piece.getColor())              // king is not in check
                 && !squareAttacked(r, 3, piece.getColor())              // square between origin and destination not attacked
                 && board.squareHasPiece(r, 3, Piece.EMPTY)
                 && board.squareHasPiece(r, 2, Piece.EMPTY)
                 && board.squareHasPiece(r, 1, Piece.EMPTY))             // squares between king and rook empty
-            moves.add(new CastlingMove(2, piece));
+            moves.add(new CastlingMove(2, piece, board.getCastlingRightsClone(), board.getFiftyMoveClock()));
     }
 }

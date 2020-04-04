@@ -19,7 +19,6 @@ public class FENParser {
         Piece[][] position = parseFirst(fields[0]);
         Color toMove = parseSecond(fields[1]);
         Board.CastlingRights castlingRights = parseThird(fields[2]);
-        Move enPassant = parseFourth(fields[3], toMove, position);
         int fiftyMoveClock = 0;
         int moveNumber = 1;
         if (fields.length >= 5) {
@@ -27,6 +26,7 @@ public class FENParser {
             if (fields.length == 6) moveNumber = parseSixth(fields[5]);
             else if (fields.length > 6) throw new FENParseException("Too many fields");
         }
+        Move enPassant = parseFourth(fields[3], toMove, position, castlingRights, fiftyMoveClock);
 
         return new Board(position, toMove, enPassant, castlingRights, fiftyMoveClock, moveNumber);
     }
@@ -97,7 +97,8 @@ public class FENParser {
         return c - 97;
     }
 
-    private static Move parseFourth(String field, Color toMove, Piece[][] position) throws FENParseException {
+    private static Move parseFourth(String field, Color toMove, Piece[][] position, Board.CastlingRights castlingRights, int fiftyMoveClock)
+            throws FENParseException {
         if (field.equals("-")) return null;
         if (field.length() != 2 || !Character.isDigit(field.charAt(1))) throw new FENParseException("Illegal en passant target square");
         int c = columnFromChar(field.charAt(0));
@@ -105,7 +106,7 @@ public class FENParser {
         if (r > 7) throw new FENParseException("Illegal en passant target square");
         int r1 = r + (toMove == Color.WHITE ? -1 : 1);
         int r2 = r + (toMove == Color.WHITE ? 1 : -1);
-        return new RegularMove(r1, c, r2, c, position[r2][c]);
+        return new RegularMove(r1, c, r2, c, position[r2][c], castlingRights, fiftyMoveClock);
     }
 
     private static int parseFifth(String field) throws FENParseException {

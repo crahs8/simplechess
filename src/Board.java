@@ -8,7 +8,7 @@ public class Board {
     private final Piece[][] position;
     private final MoveGenerator moveGen;
     private final Stack<Move> moveHistory;
-    private final CastlingRights castlingRights;
+    private CastlingRights castlingRights;
     private Color toMove;
     private int fiftyMoveClock;
     private int moveNumber;
@@ -107,6 +107,18 @@ public class Board {
         return castlingRights;
     }
 
+    public CastlingRights getCastlingRightsClone() {
+        try {
+            return (CastlingRights) castlingRights.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException("Cloning not properly implemented.");
+        }
+    }
+
+    public int getFiftyMoveClock() {
+        return fiftyMoveClock;
+    }
+
     /**
      * Applies a Move to the board.
      *
@@ -139,6 +151,10 @@ public class Board {
         } else if (m.getPiece().getType() == Piece.Type.ROOK) {
             if (m.getC1() == 7) castlingRights.removeKingside(m.getPiece().getColor());
             else if (m.getC1() == 0) castlingRights.removeQueenside(m.getPiece().getColor());
+        }
+        if (m.getR2() == Board.getRow(7, m.getPiece().getColor())) {
+            if (m.getC2() == 7) castlingRights.removeKingside(m.getPiece().getColor().swap());
+            else if (m.getC2() == 0) castlingRights.removeQueenside(m.getPiece().getColor().swap());
         }
         // increment or reset fifty move rule clock
         if (m.getPiece().getType() == Piece.Type.PAWN || m.getDestinationPiece() != Piece.EMPTY)
@@ -175,6 +191,11 @@ public class Board {
         m.setDestinationPiece(position[m.getR2()][m.getC2()]);
         position[m.getR2()][m.getC2()] = new Piece(m.getPromotion(), m.getPiece().getColor());
         position[m.getR1()][m.getC1()] = Piece.EMPTY;
+        // remove castling rights if necessary
+        if (m.getR2() == Board.getRow(7, m.getPiece().getColor())) {
+            if (m.getC2() == 7) castlingRights.removeKingside(m.getPiece().getColor().swap());
+            else if (m.getC2() == 0) castlingRights.removeQueenside(m.getPiece().getColor().swap());
+        }
         fiftyMoveClock = 0;
     }
 
@@ -217,7 +238,12 @@ public class Board {
         }
         else throw new UnsupportedOperationException("Move type " + m.getClass().getSimpleName() + " not implemented.");
 
+        try {
+            castlingRights = (CastlingRights) m.getCastlingRights().clone();
+        } catch (CloneNotSupportedException ignored) { }
+        fiftyMoveClock = m.getFiftyMoveClock();
         toMove = toMove.swap();
+        if (toMove == Color.BLACK) moveNumber--;
     }
 
     /**
@@ -276,7 +302,7 @@ public class Board {
         return boardString.toString();
     }
 
-    public static class CastlingRights {
+    public static class CastlingRights implements Cloneable {
         private boolean wKingCastlingRights;
         private boolean wQueenCastlingRights;
         private boolean bKingCastlingRights;
@@ -330,6 +356,10 @@ public class Board {
             if (c == Color.WHITE) wQueenCastlingRights = false;
             else if (c == Color.BLACK) bQueenCastlingRights = false;
             else throw new IllegalArgumentException("Illegal color: " + c);
+        }
+
+        public Object clone() throws CloneNotSupportedException {
+            return super.clone();
         }
     }
 }

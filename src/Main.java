@@ -1,6 +1,12 @@
 public class Main {
     public static void main(String[] rawArgs) {
-        Args args = new Args(rawArgs);
+        Args args;
+        try {
+            args = new Args(rawArgs);
+        } catch (Args.ArgParseException e) {
+            System.out.println(e.getMessage());
+            return;
+        }
 
         Board board;
         try {
@@ -10,25 +16,43 @@ public class Main {
             return;
         }
 
-        System.out.println(board);
-        System.out.println("Legal Moves: " + board.getLegalMoves());
+        if (args.perftDepth > 0) {
+            Perft p = new Perft(board);
+            p.diagPerft(args.perftDepth);
+        } else {
+            System.out.println(board);
+            System.out.println("Legal Moves: " + board.getLegalMoves());
+        }
     }
 
     private static class Args {
         private String FEN;
+        private int perftDepth;
 
         public Args(String[] args) {
             FEN = null;
+            perftDepth = 0;
 
             for (int i = 0; i < args.length; i++) {
-                if (args[i].equals("-f")) {
-                    FEN = args[++i];
+                switch (args[i]) {
+                    case "-f":
+                        FEN = args[++i];
+                        break;
+                    case "-p":
+                        try {
+                            perftDepth = Integer.parseUnsignedInt(args[++i]);
+                        } catch (NumberFormatException e) {
+                            throw new ArgParseException("Argument -p " + args[i] + " not valid: " + e.getMessage());
+                        }
+
                 }
             }
         }
 
-        public String getFEN() {
-            return FEN;
+        public static class ArgParseException extends RuntimeException {
+            public ArgParseException(String message) {
+                super(message);
+            }
         }
     }
 }

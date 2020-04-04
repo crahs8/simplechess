@@ -7,6 +7,8 @@ public abstract class Move {
     protected final int r2;
     protected final int c2;
     protected final Piece piece;
+    private final Board.CastlingRights castlingRights;
+    private final int fiftyMoveClock;
     // The piece at the move's destination. Used to undo the move.
     private Piece destinationPiece;
 
@@ -19,12 +21,14 @@ public abstract class Move {
      * @param c2    The column of the ending square.
      * @param piece The piece.
      */
-    protected Move(int r1, int c1, int r2, int c2, Piece piece) {
+    protected Move(int r1, int c1, int r2, int c2, Piece piece, Board.CastlingRights castlingRights, int fiftyMoveClock) {
         this.r1 = r1;
         this.c1 = c1;
         this.r2 = r2;
         this.c2 = c2;
         this.piece = piece;
+        this.castlingRights = castlingRights;
+        this.fiftyMoveClock = fiftyMoveClock;
         destinationPiece = null;
     }
 
@@ -46,6 +50,14 @@ public abstract class Move {
 
     public Piece getPiece() {
         return piece;
+    }
+
+    public Board.CastlingRights getCastlingRights() {
+        return castlingRights;
+    }
+
+    public int getFiftyMoveClock() {
+        return fiftyMoveClock;
     }
 
     public Piece getDestinationPiece() {

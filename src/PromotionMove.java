@@ -4,8 +4,8 @@
 public class PromotionMove extends Move {
     private final Piece.Type promotion;
 
-    public PromotionMove(int r1, int c1, int r2, int c2, Piece piece, Piece.Type promotion) {
-        super(r1, c1, r2, c2, piece);
+    public PromotionMove(int r1, int c1, int r2, int c2, Piece piece, Board.CastlingRights castlingRights, int fiftyMoveClock, Piece.Type promotion) {
+        super(r1, c1, r2, c2, piece, castlingRights, fiftyMoveClock);
         this.promotion = promotion;
     }
 
@@ -14,11 +14,11 @@ public class PromotionMove extends Move {
     }
 
     /**
-     * Creates a string representation of the move. EG. "e7 to e8: Q".
+     * Creates a string representation of the move. EG. "e7-e8: Q".
      *
      * @return the string representation of the move.
      */
     public String toString() {
-        return columnToChar(c1) + "" + (8 - r1) + " to " + columnToChar(c2) + "" + (8 - r2) + ": " + promotion;
+        return columnToChar(c1) + "" + (8 - r1) + "-" + columnToChar(c2) + "" + (8 - r2) + ": " + promotion;
     }
 }

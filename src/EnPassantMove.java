@@ -9,16 +9,16 @@ public class EnPassantMove extends Move {
      * @param c2    The destination column.
      * @param piece The piece.
      */
-    public EnPassantMove(int c1, int c2, Piece piece) {
-        super(Board.getRow(4, piece.getColor()), c1, Board.getRow(5, piece.getColor()), c2, piece);
+    public EnPassantMove(int c1, int c2, Piece piece, Board.CastlingRights castlingRights, int fiftyMoveClock) {
+        super(Board.getRow(4, piece.getColor()), c1, Board.getRow(5, piece.getColor()), c2, piece, castlingRights, fiftyMoveClock);
     }
 
     /**
-     * Creates a string representation of the move. EG. "e5 to d6: EP".
+     * Creates a string representation of the move. EG. "e5-d6: EP".
      *
      * @return the string representation of the move.
      */
     public String toString() {
-        return columnToChar(c1) + "" + (8 - r1) + " to " + columnToChar(c2) + "" + (8 - r2) + ": EP";
+        return columnToChar(c1) + "" + (8 - r1) + "-" + columnToChar(c2) + "" + (8 - r2) + ": EP";
     }
 }

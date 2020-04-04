@@ -38,9 +38,9 @@ class MoveGeneratorTest {
     }
 
     private static class MoveGenTest {
-        private int depth;
-        private long nodes;
-        private Board board;
+        private final int depth;
+        private final long nodes;
+        private final Board board;
 
         public MoveGenTest(JSONObject test) {
             depth = ((Long) test.get("depth")).intValue();
@@ -48,7 +48,7 @@ class MoveGeneratorTest {
             try {
                 board = FENParser.parse((String) test.get("fen"));
             } catch (FENParser.FENParseException e) {
-                e.printStackTrace();
+                throw new IllegalArgumentException("Bad test");
             }
         }
 

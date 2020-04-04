@@ -1,7 +1,7 @@
 public enum Color {
     WHITE("White"), BLACK("Black");
 
-    String name;
+    final String name;
 
     Color(String name) {
         this.name = name;

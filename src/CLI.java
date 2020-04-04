@@ -11,6 +11,12 @@ public class CLI {
     private BufferedReader reader;
     private Color playerColor;
 
+    /**
+     * Constructs a CLI object based on a given board.
+     *
+     * @param board the board.
+     * @throws IOException if readLine fails.
+     */
     public CLI(Board board) throws IOException {
         this.board = board;
         reader = new BufferedReader(new InputStreamReader(System.in));

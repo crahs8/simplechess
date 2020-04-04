@@ -1,15 +1,30 @@
+/**
+ * Represents a chess piece with a type and color.
+ */
 public class Piece {
     public static final Piece EMPTY = new Piece(Type.EMPTY, null);
 
     private final Type type;
     private final Color color;
 
+    /**
+     * Returns a new Piece from a piece character. Eg. 'P' for a white pawn.
+     *
+     * @param p The piece character.
+     * @return the new piece.
+     */
     public static Piece fromChar(char p) {
         if (p == ' ') {
             return EMPTY;
         } else return new Piece(p);
     }
 
+    /**
+     * Constructs a Piece from a given type and color.
+     *
+     * @param type  The type.
+     * @param color The color.
+     */
     public Piece(Type type, Color color) {
         this.type = type;
         this.color = color;

@@ -7,7 +7,10 @@ import java.util.List;
  * Command line interface for playing with the computer.
  */
 public class CLI {
+    private static final int SEARCH_DEPTH = 4;
+
     private Board board;
+    private Search search;
     private BufferedReader reader;
     private Color playerColor;
 
@@ -19,6 +22,7 @@ public class CLI {
      */
     public CLI(Board board) throws IOException {
         this.board = board;
+        search = new Search(board);
         reader = new BufferedReader(new InputStreamReader(System.in));
 
         while (true) {
@@ -47,14 +51,24 @@ public class CLI {
                     try {
                         Move m = parseMove(reader.readLine());
                         board.makeMove(m);
+                        if (board.getLegalMoves().size() == 0) {
+                            gameNotEnded = false;
+                            System.out.println("Game over.");
+                        }
                         break;
                     } catch (MoveParseException e) {
                         System.out.println(e.getMessage());
                     }
                 }
             } else {
-                gameNotEnded = false;
-                // TODO: Computer makes a move
+                Move m = search.findBestMove(SEARCH_DEPTH);
+                if (m == null) {
+                    gameNotEnded = false;
+                    System.out.println("Game over.");
+                } else {
+                    board.makeMove(m);
+                    System.out.println(m);
+                }
             }
         }
     }

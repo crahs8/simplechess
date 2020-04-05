@@ -4,10 +4,23 @@ import java.util.*;
  * Represents a chess board.
  */
 public class Board {
+    private static final Piece[][] DEFAULT_POSITION = parseSetup(new char[][]{
+            {'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'},
+            {'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'},
+            {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+            {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+            {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+            {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+            {'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'},
+            {'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'}
+    });
+
     // The position of the pieces on the board.
     private final Piece[][] position;
     private final MoveGenerator moveGen;
     private final Stack<Move> moveHistory;
+    // Hashes of all previous positions.
+    private final Set<Integer> previousPositions;
     private CastlingRights castlingRights;
     private Color toMove;
     private int fiftyMoveClock;
@@ -17,23 +30,7 @@ public class Board {
      * Constructs a Board object of the normal chess stating position.
      */
     public Board() {
-        char[][] setup = new char[][]{
-                {'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'},
-                {'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'},
-                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-                {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-                {'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'},
-                {'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'}
-        };
-        position = parseSetup(setup);
-        moveGen = new MoveGenerator(this);
-        moveHistory = new Stack<>();
-        toMove = Color.WHITE;
-        castlingRights = new CastlingRights();
-        fiftyMoveClock = 0;
-        moveNumber = 1;
+        this(DEFAULT_POSITION, Color.WHITE, null, new CastlingRights(), 0, 1);
     }
 
     /**
@@ -49,6 +46,8 @@ public class Board {
         this.position = position;
         moveGen = new MoveGenerator(this);
         moveHistory = new Stack<>();
+        previousPositions = new HashSet<>();
+        previousPositions.add(Arrays.hashCode(position));
         this.toMove = toMove;
         if (lastMove != null) moveHistory.push(lastMove);
         this.castlingRights = castlingRights;
@@ -76,7 +75,7 @@ public class Board {
      * @param setup The 2d char array.
      * @return A 2d array of Piece objects.
      */
-    private Piece[][] parseSetup(char[][] setup) {
+    private static Piece[][] parseSetup(char[][] setup) {
         Piece[][] pieces = new Piece[8][8];
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
@@ -125,6 +124,7 @@ public class Board {
      * @param m The move to apply.
      */
     public void makeMove(Move m) {
+        previousPositions.add(Arrays.hashCode(position));
         if (m instanceof RegularMove) makeMove((RegularMove) m);
         else if (m instanceof CastlingMove) makeMove((CastlingMove) m);
         else if (m instanceof PromotionMove) makeMove((PromotionMove) m);
@@ -244,6 +244,7 @@ public class Board {
         fiftyMoveClock = m.getFiftyMoveClock();
         toMove = toMove.swap();
         if (toMove == Color.BLACK) moveNumber--;
+        previousPositions.remove(Arrays.hashCode(position));
     }
 
     /**
@@ -279,6 +280,24 @@ public class Board {
      */
     public boolean squareCapturableBy(int r, int c, Color color) {
         return position[r][c].getColor() != color;
+    }
+
+    /**
+     * Returns whether the player to move is in check.
+     *
+     * @return whether the player to move is in check.
+     */
+    public boolean isCheck() {
+        return moveGen.isCheck(toMove);
+    }
+
+    /**
+     * Returns whether the current position has been repeated before.
+     *
+     * @return whether the current position has been repeated before.
+     */
+    public boolean positionRepeated() {
+        return previousPositions.contains(Arrays.hashCode(position));
     }
 
     /**

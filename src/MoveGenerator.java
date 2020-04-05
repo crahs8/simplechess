@@ -107,7 +107,7 @@ public class MoveGenerator {
      * @param color The color of the king.
      * @return whether the king is check.
      */
-    private boolean isCheck(Color color) {
+    public boolean isCheck(Color color) {
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
                 if (board.squareHasPiece(r, c, new Piece(Piece.Type.KING, color)))

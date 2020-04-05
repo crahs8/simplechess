@@ -60,6 +60,11 @@ public class Piece {
         return color == Color.WHITE ? type.toString() : type.toString().toLowerCase();
     }
 
+    @Override
+    public int hashCode() {
+        return type.hashCode() ^ color.hashCode();
+    }
+
     public enum Type {
         PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, EMPTY;
 

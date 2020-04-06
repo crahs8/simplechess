@@ -20,7 +20,7 @@ public class Search {
     private int negaMax(int depth) {
         if (depth == 0) return eval.evaluate();
 
-        int max = Integer.MIN_VALUE;
+        int max = -1000000;
         List<Move> moves = board.getLegalMoves();
         // check for stalemate
         if (moves.size() == 0 && !board.isCheck()) return 0;
@@ -49,7 +49,7 @@ public class Search {
         if (depth < 1) throw new IllegalArgumentException("Depth must be at least 1");
 
         Move bestMove = null;
-        int max = Integer.MIN_VALUE;
+        int max = -1000000;
         List<Move> moves = board.getLegalMoves();
 
         for (Move m : moves) {

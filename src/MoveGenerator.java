@@ -57,7 +57,10 @@ public class MoveGenerator {
      * @param moves The list of moves to remove from.
      */
     private void removeIllegalMoves(List<Move> moves) {
-        moves.removeIf(move -> !moveLegal(move));
+        Iterator<Move> it = moves.iterator();
+        while(it.hasNext()) {
+            if (!moveLegal(it.next())) it.remove();
+        }
     }
 
     /**

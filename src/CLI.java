@@ -51,10 +51,7 @@ public class CLI {
                     try {
                         Move m = parseMove(reader.readLine());
                         board.makeMove(m);
-                        if (board.getLegalMoves().size() == 0) {
-                            gameNotEnded = false;
-                            System.out.println("Game over.");
-                        }
+                        gameNotEnded = !board.gameEnded();
                         break;
                     } catch (MoveParseException e) {
                         System.out.println(e.getMessage());
@@ -62,15 +59,12 @@ public class CLI {
                 }
             } else {
                 Move m = search.findBestMove(SEARCH_DEPTH);
-                if (m == null) {
-                    gameNotEnded = false;
-                    System.out.println("Game over.");
-                } else {
-                    board.makeMove(m);
-                    System.out.println(m);
-                }
+                board.makeMove(m);
+                System.out.println(m);
+                gameNotEnded = !board.gameEnded();
             }
         }
+        System.out.println("Game over.");
     }
 
     private Move parseMove(String m) throws MoveParseException {

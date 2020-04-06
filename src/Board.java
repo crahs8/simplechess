@@ -18,7 +18,7 @@ public class Board {
     // The position of the pieces on the board.
     private final Piece[][] position;
     private final MoveGenerator moveGen;
-    private final Stack<Move> moveHistory;
+    private final Deque<Move> moveHistory;
     // Hashes of all previous positions.
     private final Set<Integer> previousPositions;
     private CastlingRights castlingRights;
@@ -45,9 +45,9 @@ public class Board {
     public Board(Piece[][] position, Color toMove, Move lastMove, CastlingRights castlingRights, int fiftyMoveClock, int moveNumber) {
         this.position = position;
         moveGen = new MoveGenerator(this);
-        moveHistory = new Stack<>();
+        moveHistory = new ArrayDeque<Move>();
         previousPositions = new HashSet<>();
-        previousPositions.add(Arrays.hashCode(position));
+        previousPositions.add(Arrays.deepHashCode(position));
         this.toMove = toMove;
         if (lastMove != null) moveHistory.push(lastMove);
         this.castlingRights = castlingRights;
@@ -95,7 +95,7 @@ public class Board {
     }
 
     public Move getLastMove() {
-        return moveHistory.empty() ? null : moveHistory.peek();
+        return moveHistory.size() == 0 ? null : moveHistory.peek();
     }
 
     public Color getToMove() {
@@ -124,7 +124,7 @@ public class Board {
      * @param m The move to apply.
      */
     public void makeMove(Move m) {
-        previousPositions.add(Arrays.hashCode(position));
+        previousPositions.add(Arrays.deepHashCode(position));
         if (m instanceof RegularMove) makeMove((RegularMove) m);
         else if (m instanceof CastlingMove) makeMove((CastlingMove) m);
         else if (m instanceof PromotionMove) makeMove((PromotionMove) m);
@@ -244,7 +244,7 @@ public class Board {
         fiftyMoveClock = m.getFiftyMoveClock();
         toMove = toMove.swap();
         if (toMove == Color.BLACK) moveNumber--;
-        previousPositions.remove(Arrays.hashCode(position));
+        previousPositions.remove(Arrays.deepHashCode(position));
     }
 
     /**
@@ -297,7 +297,37 @@ public class Board {
      * @return whether the current position has been repeated before.
      */
     public boolean positionRepeated() {
-        return previousPositions.contains(Arrays.hashCode(position));
+        return previousPositions.contains(Arrays.deepHashCode(position));
+    }
+
+    /**
+     * Returns whether the current position has been repeated for a third time.
+     *
+     * @return whether the current position has been repeated for a third time.
+     */
+    private boolean threeFoldRepetition() {
+        Deque<Move> historyClone = ((ArrayDeque<Move>) moveHistory).clone();
+        int current = Arrays.deepHashCode(position);
+        int count = 1;
+
+        for (Move m : moveHistory) {
+            unmakeMove();
+            if (Arrays.deepHashCode(position) == current) count++;
+        }
+        Iterator<Move> it = historyClone.descendingIterator();
+        while(it.hasNext()) makeMove(it.next());
+
+        return count >= 3;
+    }
+
+    /**
+     * Returns whether the game is over in the current position.
+     * This method is slow and shouldn't be used for search.
+     *
+     * @return whether the game is over.
+     */
+    public boolean gameEnded() {
+        return getLegalMoves().size() == 0 || fiftyMoveClock == 50 || threeFoldRepetition();
     }
 
     /**

@@ -3,6 +3,7 @@
  */
 public class Piece {
     public static final Piece EMPTY = new Piece(Type.EMPTY, null);
+    private static final int EMPTY_HASH_CODE = EMPTY.hashCode();
 
     private final Type type;
     private final Color color;
@@ -62,7 +63,7 @@ public class Piece {
 
     @Override
     public int hashCode() {
-        return type.hashCode() ^ color.hashCode();
+        return color != null ? type.hashCode() ^ (13 * color.hashCode()) : EMPTY_HASH_CODE;
     }
 
     public enum Type {

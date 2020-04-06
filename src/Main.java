@@ -23,7 +23,7 @@ public class Main {
             p.diagPerft(args.divideDepth);
         } else if (args.testDepth > 0) {
             Search s = new Search(board);
-            s.findBestMove(args.testDepth);
+            System.out.println(s.findBestMove(args.testDepth));
         } else {
             CLI c = new CLI(board);
             c.startCLI();

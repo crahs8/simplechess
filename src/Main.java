@@ -18,9 +18,12 @@ public class Main {
             return;
         }
 
-        if (args.perftDepth > 0) {
+        if (args.divideDepth > 0) {
             Perft p = new Perft(board);
-            p.diagPerft(args.perftDepth);
+            p.diagPerft(args.divideDepth);
+        } else if (args.testDepth > 0) {
+            Search s = new Search(board);
+            s.findBestMove(args.testDepth);
         } else {
             CLI c = new CLI(board);
             c.startCLI();
@@ -29,24 +32,33 @@ public class Main {
 
     private static class Args {
         private String FEN;
-        private int perftDepth;
+        private int divideDepth;
+        private int testDepth;
 
         public Args(String[] args) {
             FEN = null;
-            perftDepth = 0;
+            divideDepth = 0;
+            testDepth = 0;
 
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
                     case "-f":
                         FEN = args[++i];
                         break;
-                    case "-p":
+                    case "-d":
                         try {
-                            perftDepth = Integer.parseUnsignedInt(args[++i]);
+                            divideDepth = Integer.parseUnsignedInt(args[++i]);
                         } catch (NumberFormatException e) {
-                            throw new ArgParseException("Argument -p " + args[i] + " not valid: " + e.getMessage());
+                            throw new ArgParseException("Argument -d " + args[i] + " not valid: " + e.getMessage());
                         }
-
+                        break;
+                    case "-t":
+                        try {
+                            testDepth = Integer.parseUnsignedInt(args[++i]);
+                        } catch (NumberFormatException e) {
+                            throw new ArgParseException("Argument -t " + args[i] + " not valid: " + e.getMessage());
+                        }
+                        break;
                 }
             }
         }
